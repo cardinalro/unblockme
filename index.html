@@ -31,7 +31,7 @@ When a piece moves, it enters (cover)a new zone, and leaves (uncover)an old zone
 <br />
 These zones are, like a piece, the have a length, an orientation, and a position on the table. I thought these might be useful.
 <br />
-<img src="images/zones70.png"/>
+<img src="images/zones80.png"/>
 
 <br />
 <div style="text-align:center;font-weight: bold;">The decision functions for pruning</div>
@@ -47,7 +47,7 @@ One says that
 Good use was made for these zones I talked about.
 So, this function, validates a move if some moves before( remember I keep track of moves) uncover a zone that is covered by this move(the one being tested).
 <br />
-<img src="nopurpose.png"/>
+<img src="images/nopurpose.png"/>
 <br />
 <br />
 Another function, tests whether
@@ -60,7 +60,7 @@ The idea is that, between the moves of the same piece, one must cover the uncove
 <br />
 And also, the move that covers must be older that the one that uncovers.
 <br />
-<img src="cycles.png"/>
+<img src="images/cycles.png"/>
 <br />
 <div style="text-align:center;font-weight: bold;">Happy end</div>
 
@@ -74,10 +74,14 @@ puzzles
 <br />
 The source code is a plain C# named <a href="unblme.cs">unblme.CS</a>, can be compiled with any .NET Framework's CSC
 <br />
-The command line to run this executable is unblme file.txt, where the input file is like this <a href="in750.cs">file.txt</a>
+The command line to run this executable is unblme file.txt 50 4 true, where the input file is like this <a href="in750.cs">file.txt</a>
+<br />
+50 means the number maximum depth for tree search(0 mean infinite depth,which I hope never happens :P )
+<br />
+4 is depth to search for purpose function(can be also 5, 3 )
+<br />
+true/false verifyorder for "cycles" function (usually true)
 <br />
 <div style="text-align:center;font-weight: bold;">Enjoy!</div>
-
-
 </body>
 </html>
