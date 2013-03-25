@@ -1,0 +1,125 @@
+ A     B   C
+ A D D B   C
+ A   E E F  
+ G G G   F H
+     I   F H
+ J J I K K  
+
+ A     B F C
+ A D D B F C
+ A   E E F  
+ G G G     H
+     I     H
+ J J I K K  
+
+ A     B F C
+ A D D B F C
+ A   E E F  
+   G G G   H
+     I     H
+ J J I K K  
+
+       B F C
+   D D B F C
+ A   E E F  
+ A G G G   H
+ A   I     H
+ J J I K K  
+
+       B F C
+ D D   B F C
+ A   E E F  
+ A G G G   H
+ A   I     H
+ J J I K K  
+
+       B F C
+ D D   B F C
+ A   E E F  
+ A G G G    
+ A   I     H
+ J J I K K H
+
+       B F C
+ D D   B F C
+ A   E E F  
+ A     G G G
+ A   I     H
+ J J I K K H
+
+       B F C
+ D D   B F C
+ A   E E F  
+ A   I G G G
+ A   I     H
+ J J   K K H
+
+       B F C
+ D D   B F C
+ A   E E F  
+ A   I G G G
+ A   I     H
+   J J K K H
+
+       B F C
+ D D   B F C
+     E E F  
+ A   I G G G
+ A   I     H
+ A J J K K H
+
+       B F C
+ D D   B F C
+ E E     F  
+ A   I G G G
+ A   I     H
+ A J J K K H
+
+     I B F C
+ D D I B F C
+ E E     F  
+ A     G G G
+ A         H
+ A J J K K H
+
+     I B F C
+ D D I B F C
+   E E   F  
+ A     G G G
+ A         H
+ A J J K K H
+
+     I B F C
+ D D I B F C
+ A E E   F  
+ A     G G G
+ A         H
+   J J K K H
+
+     I B F C
+ D D I B F C
+ A E E   F  
+ A G G G    
+ A         H
+   J J K K H
+
+     I B F C
+ D D I B F C
+ A E E   F  
+ A G G G   H
+ A         H
+   J J K K  
+
+     I B F C
+ D D I B F C
+ A E E   F  
+ A G G G   H
+ A         H
+ J J   K K  
+
+     I B F C
+ D D I B F C
+ A E E   F  
+ A G G G   H
+ A         H
+ J J K K    

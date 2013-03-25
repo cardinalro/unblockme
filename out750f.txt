@@ -1,0 +1,254 @@
+ A   B C C C
+ A   B D   E
+ A F F D G E
+   H   D G I
+   H J J G I
+ K K K      
+
+ A   B C C C
+ A   B D G E
+ A F F D G E
+   H   D G I
+   H J J   I
+ K K K      
+
+ A   B C C C
+ A   B D G E
+ A F F D G E
+   H   D G I
+   H   J J I
+ K K K      
+
+ A   B C C C
+ A   B D G E
+ A F F D G E
+   H   D G I
+   H   J J I
+   K K K    
+
+     B C C C
+     B D G E
+   F F D G E
+ A H   D G I
+ A H   J J I
+ A K K K    
+
+     B C C C
+     B D G E
+ F F   D G E
+ A H   D G I
+ A H   J J I
+ A K K K    
+
+       C C C
+       D G E
+ F F   D G E
+ A H B D G I
+ A H B J J I
+ A K K K    
+
+     C C C  
+       D G E
+ F F   D G E
+ A H B D G I
+ A H B J J I
+ A K K K    
+
+     C C C E
+       D G E
+ F F   D G  
+ A H B D G I
+ A H B J J I
+ A K K K    
+
+     C C C E
+       D G E
+   F F D G  
+ A H B D G I
+ A H B J J I
+ A K K K    
+
+ A   C C C E
+ A     D G E
+ A F F D G  
+   H B D G I
+   H B J J I
+   K K K    
+
+ A   C C C E
+ A     D G E
+ A F F D G I
+   H B D G I
+   H B J J  
+   K K K    
+
+ A   C C C E
+ A     D G E
+ A F F D G I
+   H B D G I
+   H B   J J
+   K K K    
+
+ A   C C C E
+ A     D G E
+ A F F D G I
+   H B D G I
+   H B   J J
+ K K K      
+
+ A   C C C E
+ A       G E
+ A F F   G I
+   H B D G I
+   H B D J J
+ K K K D    
+
+ A   C C C E
+ A       G E
+ A   F F G I
+   H B D G I
+   H B D J J
+ K K K D    
+
+ A H C C C E
+ A H     G E
+ A   F F G I
+     B D G I
+     B D J J
+ K K K D    
+
+ A H C C C E
+ A H     G E
+ A F F   G I
+     B D G I
+     B D J J
+ K K K D    
+
+ A H C C C E
+ A H   D G E
+ A F F D G I
+     B D G I
+     B   J J
+ K K K      
+
+ A H C C C E
+ A H   D G E
+ A F F D G I
+     B D G I
+     B J J  
+ K K K      
+
+ A H C C C E
+ A H   D G E
+ A F F D G  
+     B D G I
+     B J J I
+ K K K      
+
+ A H C C C  
+ A H   D G E
+ A F F D G E
+     B D G I
+     B J J I
+ K K K      
+
+ A H   C C C
+ A H   D G E
+ A F F D G E
+     B D G I
+     B J J I
+ K K K      
+
+ A H   C C C
+ A H   D G E
+ A F F D G E
+     B D G I
+     B J J I
+   K K K    
+
+   H   C C C
+   H   D G E
+   F F D G E
+ A   B D G I
+ A   B J J I
+ A K K K    
+
+   H   C C C
+   H   D G E
+ F F   D G E
+ A   B D G I
+ A   B J J I
+ A K K K    
+
+   H B C C C
+   H B D G E
+ F F   D G E
+ A     D G I
+ A     J J I
+ A K K K    
+
+   H B C C C
+   H B D G E
+   F F D G E
+ A     D G I
+ A     J J I
+ A K K K    
+
+ A H B C C C
+ A H B D G E
+ A F F D G E
+       D G I
+       J J I
+   K K K    
+
+ A H B C C C
+ A H B D G E
+ A F F D G E
+       D G I
+ J J       I
+   K K K    
+
+ A H B C C C
+ A H B D   E
+ A F F D   E
+       D G I
+ J J     G I
+   K K K G  
+
+ A H B C C C
+ A H B D   E
+ A F F D   E
+       D G I
+ J J     G I
+ K K K   G  
+
+ A H B C C C
+ A H B     E
+ A F F     E
+       D G I
+ J J   D G I
+ K K K D G  
+
+ A H B C C C
+ A H B     E
+ A     F F E
+       D G I
+ J J   D G I
+ K K K D G  
+
+ A H   C C C
+ A H B     E
+ A   B F F E
+       D G I
+ J J   D G I
+ K K K D G  
+
+ A H C C C  
+ A H B     E
+ A   B F F E
+       D G I
+ J J   D G I
+ K K K D G  
+
+36 moves.
+
