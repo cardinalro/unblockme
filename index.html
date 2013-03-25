@@ -1,147 +1,83 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=640" />
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-    <link rel="stylesheet" href="stylesheets/core.css" media="screen"/>
-    <link rel="stylesheet" href="stylesheets/mobile.css" media="handheld, only screen and (max-device-width:640px)"/>
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css"/>
-
-    <script type="text/javascript" src="javascripts/modernizr.js"></script>
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript" src="javascripts/headsmart.min.js"></script>
-    <script type="text/javascript">
-      $(document).ready(function () {
-        $('#main_content').headsmart()
-      })
-    </script>
-    <title>Unblockme by cardinalro</title>
-  </head>
-
-  <body>
-    <a id="forkme_banner" href="https://github.com/cardinalro/unblockme">View on GitHub</a>
-    <div class="shell">
-
-      <header>
-        <span class="ribbon-outer">
-          <span class="ribbon-inner">
-            <h1>Unblockme</h1>
-            <h2></h2>
-          </span>
-          <span class="left-tail"></span>
-          <span class="right-tail"></span>
-        </span>
-      </header>
-
-      <section id="downloads">
-        <span class="inner">
-          <a href="https://github.com/cardinalro/unblockme/zipball/master" class="zip"><em>download</em> .ZIP</a><a href="https://github.com/cardinalro/unblockme/tarball/master" class="tgz"><em>download</em> .TGZ</a>
-        </span>
-      </section>
-
-
-      <span class="banner-fix"></span>
-
-
-      <section id="main_content">
-        <p>&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "<a href="http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd%22%3E">http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;</a></p>
-
-<p>
-</p>
-    Untitled Page<div>The Cat</div>
-
-<p><br>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Untitled Page</title>
+</head>
+<body>
+<div style="text-align:center;font-weight: bold;">The Cat</div>
+<br />
 Like many programmers, when I see a puzzle, I cannot help thinking "Can I devise an algorithm to solve that" ?
-<br>
+<br />
 It is probably the same urge, that drives a cat crazy, when it sees something dangling, to play with it :)
-<br>
+<br />
 Then I saw the Unblock Me puzzle, you can read about it here, and many have it on their Android phone.
-<br>
+<br />
 Immediately, I started thinking about how to solve that game, too.
-<br>
+<br />
 Of course, in a couple of days I managed to write a program, using a depth first search. I did the recursion, the backtracking, I kept a trace of values, like a Stack.
-<br>
+<br />
 But when I ran it, it kept running, and running... and running...
-<br>
+<br />
 It seemed that the space for searching was something big, almost like the central supermassive black hole of the galaxy :(
-<br><br></p>
-
-<div>The Prune</div>
-
-<p><br>
+<br />
+<br />
+<div style="text-align:center;font-weight: bold;">The Prune</div>
+<br />
 So, i decided i need some imaginative pruning. That is, to eliminate some of the branches of that awful tree.
-<br>
+<br />
 What came to my mind ?
 When a piece moves, it enters (cover)a new zone, and leaves (uncover)an old zone.
-<br>
+<br />
 These zones are, like a piece, the have a length, an orientation, and a position on the table. I thought these might be useful.
-<br><img src="zones70.png"></p>
+<br />
+<img src="zones70.png"/>
 
-<p><br></p>
-
-<div>The decision functions for pruning</div>
-
-<div>(some horror code will follow)</div>
-
-<p><br>
+<br />
+<div style="text-align:center;font-weight: bold;">The decision functions for pruning</div>
+<div style="text-align:center;">(some horror code will follow)</div>
+<br />
 These functions decide whether I will continue to search from a node, or not.
 Of course, I played with some functions, but two remained.
-<br>
+<br />
 One says that
-<br>
+<br />
 "For a move to be valid, it needs to be historically purposeful"
-<br>
+<br />
 Good use was made for these zones I talked about.
 So, this function, validates a move if some moves before( remember I keep track of moves) uncover a zone that is covered by this move(the one being tested).
-<br><img src="nopurpose.png"><br><br>
-Another function, tests whether</p>
+<br />
+<img src="nopurpose.png"/>
+<br />
+<br />
+Another function, tests whether
 
-<p>"between the current move and an older one of the same piece, are some moves that helps me to do these 2 moves ?"
-<br>
-So, if between current move, and an older move of the same piece, the pieces are moving unpurposefully(similar to the previous function) the move is invalid.</p>
+"between the current move and an older one of the same piece, are some moves that helps me to do these 2 moves ?"
+<br />
+So, if between current move, and an older move of the same piece, the pieces are moving unpurposefully(similar to the previous function) the move is invalid.
 
-<p>The idea is that, between the moves of the same piece, one must cover the uncovered zone of the oldest move, and another must leave a zone for the newest move to cover.
-<br>
+The idea is that, between the moves of the same piece, one must cover the uncovered zone of the oldest move, and another must leave a zone for the newest move to cover.
+<br />
 And also, the move that covers must be older that the one that uncovers.
-<br><img src="cycles.png"><br></p>
+<br />
+<img src="cycles.png"/>
+<br />
+<div style="text-align:center;font-weight: bold;">Happy end</div>
 
-<div>Happy end</div>
-
-<p>So, i ran the program, and voila ! It solves all the puzzles that I thrown at it.
-<br>
+So, i ran the program, and voila ! It solves all the puzzles that I thrown at it.
+<br />
 Examples :
 <a href="out643f.cs">643</a>
 <a href="out743f.cs">743</a>
 <a href="out750f.cs">750</a>
 puzzles
-<br>
+<br />
 The source code is a plain C# named <a href="unblme.cs">unblme.CS</a>, can be compiled with any .NET Framework's CSC
-<br>
+<br />
 The command line to run this executable is unblme file.txt, where the input file is like this <a href="in750.cs">file.txt</a>
-<br></p>
+<br />
+<div style="text-align:center;font-weight: bold;">Enjoy!</div>
 
-<div>Enjoy!</div>
 
-<p>
-</p>
-      </section>
-
-      <footer>
-        <span class="ribbon-outer">
-          <span class="ribbon-inner">
-            <p>this project by <a href="https://github.com/cardinalro">cardinalro</a> can be found on <a href="https://github.com/cardinalro/unblockme">GitHub</a></p>
-          </span>
-          <span class="left-tail"></span>
-          <span class="right-tail"></span>
-        </span>
-        <p>Generated with <a href="http://pages.github.com">GitHub Pages</a> using Merlot</p>
-        <span class="octocat"></span>
-      </footer>
-
-    </div>
-
-    
-  </body>
+</body>
 </html>
