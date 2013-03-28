@@ -1,0 +1,393 @@
+ A A A B C D
+ E F F B C D
+ E   G G C D
+ H H I      
+   J I   K K
+   J L L M M
+
+ A A A B   D
+ E F F B C D
+ E   G G C D
+ H H I   C  
+   J I   K K
+   J L L M M
+
+ A A A B    
+ E F F B C D
+ E   G G C D
+ H H I   C D
+   J I   K K
+   J L L M M
+
+ A A A B    
+ E F F B C D
+ E G G   C D
+ H H I   C D
+   J I   K K
+   J L L M M
+
+ A A A      
+ E F F   C D
+ E G G B C D
+ H H I B C D
+   J I   K K
+   J L L M M
+
+       A A A
+ E F F   C D
+ E G G B C D
+ H H I B C D
+   J I   K K
+   J L L M M
+
+ E     A A A
+ E F F   C D
+   G G B C D
+ H H I B C D
+   J I   K K
+   J L L M M
+
+ E     A A A
+ E F F   C D
+ G G   B C D
+ H H I B C D
+   J I   K K
+   J L L M M
+
+ E     A A A
+ E F F   C D
+ G G I B C D
+ H H I B C D
+   J     K K
+   J L L M M
+
+ E     A A A
+ E F F   C D
+ G G I B C D
+ H H I B C D
+   J K K    
+   J L L M M
+
+ E     A A A
+ E F F     D
+ G G I B C D
+ H H I B C D
+   J K K C  
+   J L L M M
+
+ E     A A A
+ E F F      
+ G G I B C D
+ H H I B C D
+   J K K C D
+   J L L M M
+
+ E     A A A
+ E       F F
+ G G I B C D
+ H H I B C D
+   J K K C D
+   J L L M M
+
+ E     A A A
+ E     B F F
+ G G I B C D
+ H H I   C D
+   J K K C D
+   J L L M M
+
+ E   I A A A
+ E   I B F F
+ G G   B C D
+ H H     C D
+   J K K C D
+   J L L M M
+
+ E   I A A A
+ E   I B F F
+   G G B C D
+ H H     C D
+   J K K C D
+   J L L M M
+
+ E   I A A A
+ E   I B F F
+   G G B C D
+     H H C D
+   J K K C D
+   J L L M M
+
+     I A A A
+     I B F F
+   G G B C D
+     H H C D
+ E J K K C D
+ E J L L M M
+
+     I A A A
+     I B F F
+ G G   B C D
+     H H C D
+ E J K K C D
+ E J L L M M
+
+     I A A A
+     I B F F
+ G G   B C D
+ H H     C D
+ E J K K C D
+ E J L L M M
+
+     I A A A
+     I   F F
+ G G   B C D
+ H H   B C D
+ E J K K C D
+ E J L L M M
+
+       A A A
+         F F
+ G G I B C D
+ H H I B C D
+ E J K K C D
+ E J L L M M
+
+       A A A
+ F F        
+ G G I B C D
+ H H I B C D
+ E J K K C D
+ E J L L M M
+
+       A A A
+ F F I      
+ G G I B C D
+ H H   B C D
+ E J K K C D
+ E J L L M M
+
+ A A A      
+ F F I      
+ G G I B C D
+ H H   B C D
+ E J K K C D
+ E J L L M M
+
+ A A A B    
+ F F I B    
+ G G I   C D
+ H H     C D
+ E J K K C D
+ E J L L M M
+
+ A A A B C  
+ F F I B C  
+ G G I   C D
+ H H       D
+ E J K K   D
+ E J L L M M
+
+ A A A B C D
+ F F I B C D
+ G G I   C D
+ H H        
+ E J K K    
+ E J L L M M
+
+ A A A B C D
+ F F I B C D
+ G G I   C D
+         H H
+ E J K K    
+ E J L L M M
+
+ A A A   C D
+ F F I   C D
+ G G I B C D
+       B H H
+ E J K K    
+ E J L L M M
+
+ A A A   C D
+ F F I   C D
+ G G I B C D
+       B H H
+ E J     K K
+ E J L L M M
+
+ A A A   C D
+ F F I   C D
+ G G I B C D
+   J   B H H
+ E J     K K
+ E   L L M M
+
+   A A A C D
+ F F I   C D
+ G G I B C D
+   J   B H H
+ E J     K K
+ E   L L M M
+
+   A A A C D
+ F F     C D
+ G G   B C D
+   J I B H H
+ E J I   K K
+ E   L L M M
+
+   A A A C D
+     F F C D
+ G G   B C D
+   J I B H H
+ E J I   K K
+ E   L L M M
+
+   A A A C D
+     F F C D
+   G G B C D
+   J I B H H
+ E J I   K K
+ E   L L M M
+
+ E A A A C D
+ E   F F C D
+   G G B C D
+   J I B H H
+   J I   K K
+     L L M M
+
+ E A A A C D
+ E   F F C D
+   G G B C D
+   J I B H H
+   J I   K K
+ L L     M M
+
+ E A A A C D
+ E   F F C D
+   G G   C D
+   J I   H H
+   J I B K K
+ L L   B M M
+
+ E A A A C D
+ E   F F C D
+     G G C D
+   J I   H H
+   J I B K K
+ L L   B M M
+
+ E A A A C D
+ E   F F C D
+     G G C D
+   J     H H
+   J I B K K
+ L L I B M M
+
+ E A A A C D
+ E   F F C D
+     G G C D
+   J H H    
+   J I B K K
+ L L I B M M
+
+ E A A A   D
+ E   F F C D
+     G G C D
+   J H H C  
+   J I B K K
+ L L I B M M
+
+ E   A A A D
+ E   F F C D
+     G G C D
+   J H H C  
+   J I B K K
+ L L I B M M
+
+ E J A A A D
+ E J F F C D
+     G G C D
+     H H C  
+     I B K K
+ L L I B M M
+
+ E J A A A D
+ E J F F C D
+ G G     C D
+     H H C  
+     I B K K
+ L L I B M M
+
+ E J A A A D
+ E J F F C D
+ G G     C D
+ H H     C  
+     I B K K
+ L L I B M M
+
+ E J A A A D
+ E J F F C D
+ G G   B C D
+ H H   B C  
+     I   K K
+ L L I   M M
+
+ E J A A A D
+ E J F F C D
+ G G I B C D
+ H H I B C  
+         K K
+ L L     M M
+
+ E J A A A D
+ E J F F C D
+ G G I B C D
+ H H I B C  
+ K K        
+ L L     M M
+
+ E J A A A D
+ E J F F C D
+ G G I   C D
+ H H I B C  
+ K K   B    
+ L L     M M
+
+ E J A A A D
+ E J F F C D
+ G G I   C D
+ H H I B C  
+ K K   B    
+ L L M M    
+
+ E J A A A D
+ E J F F   D
+ G G I     D
+ H H I B C  
+ K K   B C  
+ L L M M C  
+
+ E J A A A  
+ E J F F    
+ G G I      
+ H H I B C D
+ K K   B C D
+ L L M M C D
+
+ E J   A A A
+ E J F F    
+ G G I      
+ H H I B C D
+ K K   B C D
+ L L M M C D
+
+ E J   A A A
+ E J   F F  
+ G G I      
+ H H I B C D
+ K K   B C D
+ L L M M C D
+
+56 moves.
