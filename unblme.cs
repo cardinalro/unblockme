@@ -376,6 +376,32 @@ class unblmedata
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
 
+    void repkeys()
+    {
+        ConsoleKeyInfo keyinfo;
+        ConsoleKey key;
+        int pos = 0;
+        while (true)
+        {
+            Console.Clear();
+            print_data(stacklposx[pos], stacklposy[pos]);
+            Console.WriteLine("press Esc to quit, Home/UP/DOWN arrows to navigate solution");
+            keyinfo = Console.ReadKey(true);
+            key = keyinfo.Key;
+            switch (key)
+            {
+                case ConsoleKey.Home: pos = 0; break;
+                case ConsoleKey.UpArrow: pos--; if (pos < 0) pos = 0; break;
+                case ConsoleKey.DownArrow: pos++; if (pos >= poistack_state) pos = poistack_state - 1; break;
+                case ConsoleKey.Escape: return;
+            }
+
+        }
+    }
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+
     void print_footprint(int val, direction type, int pos)
     {
         Console.WriteLine();
@@ -637,13 +663,13 @@ class unblmedata
         move_ind(i, j);
         if (!data_exists_before())
             if (was_good_move())
-                aftermove();
+                aftermove1();
     }
 
-    public void aftermove()
+    public void aftermove1()
     {
         int i, j;
-        if (is_final()) { print_stack(); Environment.Exit(0); }
+        if (is_final()) { push_state(); print_stack(); repkeys(); Environment.Exit(0); }
         if (MAXDEPTH != 0)
             if (poistack_state == MAXDEPTH) return;//some limitation
         make_nexts();
@@ -654,6 +680,33 @@ class unblmedata
                     push_state();
                     push_nexts();
                     beforemove_push(i, j);
+                    pop_nexts();
+                    pop_state();
+                }
+    }
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+
+    public void aftermove()
+    {
+        int i, j;
+        if (is_final()) { push_state(); print_stack(); repkeys(); Environment.Exit(0); }
+        if (MAXDEPTH != 0)
+            if (poistack_state == MAXDEPTH) return;//some limitation
+        make_nexts();
+        for (i = 0; i < lennexts; i++)
+            for (j = nexts[2 * i]; j <= nexts[2 * i + 1]; j++)
+                if (is_good_move(i, j))
+                {
+                    push_state();
+                    push_nexts();
+                    push_move(i, j);
+                    move_ind(i, j);
+                    if (!data_exists_before())
+                        if (was_good_move())
+                            aftermove();
+                    pop_move();
                     pop_nexts();
                     pop_state();
                 }
@@ -772,7 +825,6 @@ class unblme
         vunblmedata.print_data(vunblmedata.lposx, vunblmedata.lposy);
         Console.WriteLine("starting computing...");
         vunblmedata.aftermove();
-        //vunblmedata.aftermove_push();
         Console.WriteLine("No sol. found. press a key...");
         Console.ReadKey();
     }
