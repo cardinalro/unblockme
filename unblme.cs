@@ -383,8 +383,17 @@ class unblmedata
         int pos = 0;
         while (true)
         {
-            Console.Clear();
+            try
+            {
+                Console.Clear();
+            }
+            catch
+            {
+            }
+            Console.WriteLine("Move no {0}", pos);
+            Console.WriteLine();
             print_data(stacklposx[pos], stacklposy[pos]);
+            Console.WriteLine();
             Console.WriteLine("press Esc to quit, Home/UP/DOWN arrows to navigate solution");
             keyinfo = Console.ReadKey(true);
             key = keyinfo.Key;
@@ -651,67 +660,77 @@ class unblmedata
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
 
-    void beforemove_push(int i, int j)
+    public void stack_exec_move(int i, int j)
     {
+        push_state();
         push_move(i, j);
-        beforemove(i, j);
+        exec_move(i, j);
         pop_move();
+        pop_state();
     }
 
-    void beforemove(int i, int j)
+    public void exec_move(int i, int j)
     {
         move_ind(i, j);
         if (!data_exists_before())
             if (was_good_move())
-                aftermove1();
+                recursion();
     }
 
-    public void aftermove1()
+    public void stack_make_nexts_and_make_moves()
+    {
+        push_nexts();
+        make_nexts_and_make_moves();
+        pop_nexts();
+    }
+
+    public void make_nexts_and_make_moves()
+    {
+        int i, j;
+        make_nexts();
+        for (i = 0; i < lennexts; i++)
+            for (j = nexts[2 * i]; j <= nexts[2 * i + 1]; j++)
+                if (is_good_move(i, j))
+                    stack_exec_move(i, j);
+    }
+
+    public void recursion()
+    {
+        if (is_final())
+        {
+            push_state();
+            print_stack();
+            repkeys();
+            Environment.Exit(0);
+        }
+        if (MAXDEPTH != 0)
+            if (poistack_state == MAXDEPTH) return;//some limitation
+        stack_make_nexts_and_make_moves();
+    }
+
+    public void recursion1()
     {
         int i, j;
         if (is_final()) { push_state(); print_stack(); repkeys(); Environment.Exit(0); }
         if (MAXDEPTH != 0)
             if (poistack_state == MAXDEPTH) return;//some limitation
+        push_nexts();
         make_nexts();
         for (i = 0; i < lennexts; i++)
             for (j = nexts[2 * i]; j <= nexts[2 * i + 1]; j++)
                 if (is_good_move(i, j))
                 {
                     push_state();
-                    push_nexts();
-                    beforemove_push(i, j);
-                    pop_nexts();
-                    pop_state();
-                }
-    }
-
-    ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////
-
-    public void aftermove()
-    {
-        int i, j;
-        if (is_final()) { push_state(); print_stack(); repkeys(); Environment.Exit(0); }
-        if (MAXDEPTH != 0)
-            if (poistack_state == MAXDEPTH) return;//some limitation
-        make_nexts();
-        for (i = 0; i < lennexts; i++)
-            for (j = nexts[2 * i]; j <= nexts[2 * i + 1]; j++)
-                if (is_good_move(i, j))
-                {
-                    push_state();
-                    push_nexts();
                     push_move(i, j);
                     move_ind(i, j);
                     if (!data_exists_before())
                         if (was_good_move())
-                            aftermove();
+                            recursion1();
                     pop_move();
-                    pop_nexts();
                     pop_state();
                 }
+        pop_nexts();
     }
-
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
     static bool IsLetter(byte b)
@@ -824,7 +843,7 @@ class unblme
         Console.WriteLine("initial");
         vunblmedata.print_data(vunblmedata.lposx, vunblmedata.lposy);
         Console.WriteLine("starting computing...");
-        vunblmedata.aftermove();
+        vunblmedata.recursion();
         Console.WriteLine("No sol. found. press a key...");
         Console.ReadKey();
     }
