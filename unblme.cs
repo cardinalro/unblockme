@@ -134,6 +134,10 @@ class unblmedata
     public int LENPURP = 4;
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
+    public DateTime startime;
+    public int countmoves;
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
 
     int maxdata()
     {
@@ -381,6 +385,9 @@ class unblmedata
         ConsoleKeyInfo keyinfo;
         ConsoleKey key;
         int pos = 0;
+        Console.WriteLine("Solution found press any key to view, or Esc to quit");
+        keyinfo = Console.ReadKey(true);
+        if (keyinfo.Key == ConsoleKey.Escape) return;
         while (true)
         {
             try
@@ -426,6 +433,10 @@ class unblmedata
             Console.WriteLine();
         }
         Console.WriteLine("{0} moves.", poistack_moves);
+        DateTime endetime = DateTime.Now;
+        TimeSpan difftime = endetime - startime;
+        Console.WriteLine("Run Time {0}", difftime);
+        Console.WriteLine("recursion called {0} times", countmoves);
     }
 
     ////////////////////////////////////////////////////
@@ -696,6 +707,7 @@ class unblmedata
 
     public void recursion()
     {
+        countmoves++;
         if (is_final())
         {
             push_state();
@@ -843,6 +855,8 @@ class unblme
         Console.WriteLine("initial");
         vunblmedata.print_data(vunblmedata.lposx, vunblmedata.lposy);
         Console.WriteLine("starting computing...");
+        vunblmedata.startime = DateTime.Now;
+        vunblmedata.countmoves = 0;
         vunblmedata.recursion();
         Console.WriteLine("No sol. found. press a key...");
         Console.ReadKey();
