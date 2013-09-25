@@ -638,9 +638,6 @@ class unblmedata
         if (!foundl) return true;
         if (!founde) return true;
 
-        //if (minposfoundl > maxposfounde)
-        //    return true;
-
         if (maxposfoundl > maxposfounde)
             return true;
         if (minposfoundl > minposfounde)
