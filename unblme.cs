@@ -130,7 +130,6 @@ class unblmedata
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
     public int MAXDEPTH = 0;
-    public bool verifyorder = true;
     public int LENPURP = 4;
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
@@ -579,7 +578,7 @@ class unblmedata
         return true;
     }
 
-    bool moving_cycles()
+    bool moving_cycles1()
     {
         bool foundl = false;
         bool founde = false;
@@ -598,9 +597,55 @@ class unblmedata
         }
         if (!foundl) return true;
         if (!founde) return true;
-        if (verifyorder)
-            if (posfoundl > posfounde)
-                return true;
+        if (posfoundl > posfounde)
+            return true;
+        return false;
+    }
+
+    bool moving_cycles()
+    {
+        bool foundl = false;
+        bool founde = false;
+        int minposfoundl = Int32.MaxValue;
+        int minposfounde = Int32.MaxValue;
+        int maxposfoundl = -1;
+        int maxposfounde = -1;
+        int i;
+        if (poistack_moves < 3) return false;
+        int val = stackpieces[poistack_moves - 1];
+        int posvaldown = first_val(val);
+        if (posvaldown == -1)
+            return false;
+        for (i = posvaldown + 1; i < poistack_moves - 1; i++)
+        {
+            if (stackzonel[posvaldown].overlaps(stackzonee[i]))
+            {
+                foundl = true;
+                if (i < minposfoundl)
+                    minposfoundl = i;
+                if (i > maxposfoundl)
+                    maxposfoundl = i;
+            }
+            if (stackzonee[poistack_moves - 1].overlaps(stackzonel[i]))
+            {
+                founde = true;
+                if (i < minposfounde)
+                    minposfounde = i;
+                if (i > maxposfounde)
+                    maxposfounde = i;
+            }
+        }
+        if (!foundl) return true;
+        if (!founde) return true;
+
+        //if (minposfoundl > maxposfounde)
+        //    return true;
+
+        if (maxposfoundl > maxposfounde)
+            return true;
+        if (minposfoundl > minposfounde)
+            return true;
+
         return false;
     }
 
@@ -842,15 +887,12 @@ class unblme
         String namefile = arrstr[0];
         String strmaxrec = arrstr[1];
         String strmaxpurp = arrstr[2];
-        String strverord = arrstr[3];
 
         unblmedata vunblmedata = unblmedata.GetUnblMeData(namefile);
         vunblmedata.MAXDEPTH = Int32.Parse(strmaxrec);
         vunblmedata.LENPURP = Int32.Parse(strmaxpurp);
-        vunblmedata.verifyorder = Boolean.Parse(strverord);
         Console.WriteLine("MAXDEPTH={0}", vunblmedata.MAXDEPTH);
         Console.WriteLine("LENPURP={0}", vunblmedata.LENPURP);
-        Console.WriteLine("verifyorder={0}", vunblmedata.verifyorder);
 
         Console.WriteLine("initial");
         vunblmedata.print_data(vunblmedata.lposx, vunblmedata.lposy);
