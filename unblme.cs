@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 enum direction
@@ -99,9 +100,234 @@ class zonep : piece
         return false;
     }
 }
-
 class unblmedata
 {
+    static void getenterzonea(piece piec, int sx, int sy, int move, out zonep zone)
+    {
+        direction dire = piec.dire;
+        int len = piec.length;
+        int newlen;
+        int posx, posy;
+        if (dire == direction.horiz)
+        {
+            if (move > 0)
+            {
+                posy = sy;
+                if (move >= len)
+                {
+                    newlen = len;
+                    posx = sx + move;
+                }
+                else
+                {
+                    newlen = move;
+                    posx = sx + len;
+                }
+            }
+            else
+            {
+                move = -move;
+                posx = sx - move;
+                posy = sy;
+                if (move >= len)
+                    newlen = len;
+                else
+                    newlen = move;
+            }
+            zone = new zonep(dire, newlen, posx, posy);
+            return;
+        }
+        if (dire == direction.verti)
+        {
+            if (move > 0)
+            {
+                posx = sx;
+                if (move >= len)
+                {
+                    newlen = len;
+                    posy = sy + move;
+                }
+                else
+                {
+                    newlen = move;
+                    posy = sy + len;
+                }
+            }
+            else
+            {
+                move = -move;
+                posy = sy - move;
+                posx = sx;
+                if (move >= len)
+                    newlen = len;
+                else
+                    newlen = move;
+            }
+            zone = new zonep(dire, newlen, posx, posy);
+            return;
+        }
+        throw new Exception("getenterzonea");
+    }
+    static void getenterzone(piece piec, int sx, int sy, int move, out zonep zone)
+    {
+        direction dire = piec.dire;
+        int len = piec.length;
+        int newlen = Math.Abs(move);
+        int posx, posy;
+        if (dire == direction.horiz)
+        {
+            if (move > 0)
+            {
+                posy = sy;
+                posx = sx + len;
+            }
+            else
+            {
+                move = -move;
+                posy = sy;
+                posx = sx - move;
+            }
+            zone = new zonep(dire, newlen, posx, posy);
+            return;
+        }
+        if (dire == direction.verti)
+        {
+            if (move > 0)
+            {
+                posx = sx;
+                posy = sy + len;
+            }
+            else
+            {
+                move = -move;
+                posx = sx;
+                posy = sy - move;
+            }
+            zone = new zonep(dire, newlen, posx, posy);
+            return;
+        }
+
+        throw new Exception("getenterzone");
+    }
+    static void getleavezonea(piece piec, int sx, int sy, int move, out zonep zone)
+    {
+        direction dire = piec.dire;
+        int len = piec.length;
+        int newlen;
+        int posx, posy;
+        if (dire == direction.horiz)
+        {
+            if (move > 0)
+            {
+                posx = sx;
+                posy = sy;
+                if (move >= len)
+                    newlen = len;
+                else
+                    newlen = move;
+            }
+            else
+            {
+                move = -move;
+                posy = sy;
+                if (move >= len)
+                {
+                    newlen = len;
+                    posx = sx;
+                }
+                else
+                {
+                    newlen = move;
+                    posx = sx + len - move;
+                }
+            }
+            zone = new zonep(dire, newlen, posx, posy);
+            return;
+        }
+        if (dire == direction.verti)
+        {
+            if (move > 0)
+            {
+                posx = sx;
+                posy = sy;
+                if (move >= len)
+                    newlen = len;
+                else
+                    newlen = move;
+            }
+            else
+            {
+                move = -move;
+                posx = sx;
+                if (move >= len)
+                {
+                    newlen = len;
+                    posy = sy;
+                }
+                else
+                {
+                    newlen = move;
+                    posy = sy + len - move;
+                }
+            }
+            zone = new zonep(dire, newlen, posx, posy);
+            return;
+        }
+        throw new Exception("getleavezonea");
+    }
+
+    static void getleavezone(piece piec, int sx, int sy, int move, out zonep zone)
+    {
+        direction dire = piec.dire;
+        int len = piec.length;
+        int newlen = Math.Abs(move);
+        int posx, posy;
+        if (dire == direction.horiz)
+        {
+            if (move > 0)
+            {
+                posy = sy;
+                posx = sx;
+            }
+            else
+            {
+                move = -move;
+                posy = sy;
+                posx = sx + len - move;
+            }
+            zone = new zonep(dire, newlen, posx, posy);
+            return;
+        }
+        if (dire == direction.verti)
+        {
+            if (move > 0)
+            {
+                posx = sx;
+                posy = sy;
+            }
+            else
+            {
+                move = -move;
+                posx = sx;
+                posy = sy + len - move;
+            }
+            zone = new zonep(dire, newlen, posx, posy);
+            return;
+        }
+        throw new Exception("getleavezone");
+    }
+
+    public static void testoverlaps()
+    {
+        direction dire = direction.horiz;
+        piece pies = new piece(dire, 3);
+        int posx = 0;
+        int posy = 2;
+        zonep zone;
+        getleavezone(pies, posx, posy, -4, out zone);
+        Console.WriteLine(zone);
+    }
+
     int lenx;
     int leny;
     int[][] data;
@@ -115,6 +341,7 @@ class unblmedata
 
     int[][] stacknexts;
     int[] stackpieces;
+    int[] stackmoves;
     int[] stackpos;
     int exitx, exity;
     int colorexit;
@@ -126,8 +353,12 @@ class unblmedata
     int[][] stacklposx;
     int[][] stacklposy;
     zonep[] stackzonee;
+    zonep[] stackzoneea;
     zonep[] stackzonel;
+    zonep[] stackzonela;
     ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    int[] vecpartit;
     ////////////////////////////////////////////////////
     public int MAXDEPTH = 0;
     public int LENPURP = 4;
@@ -137,7 +368,14 @@ class unblmedata
     public int countmoves;
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
-
+    public enum strategycycles
+    {
+        none,
+        weak,
+        medium,
+        strong
+    }
+    public strategycycles strategy;
     int maxdata()
     {
         int i, j;
@@ -169,9 +407,14 @@ class unblmedata
             stacknexts[i] = new int[lennexts * 2];
 
         stackpieces = new int[lenstack];
+        stackmoves = new int[lenstack];
         stackpos = new int[lenstack];
         stackzonee = new zonep[lenstack];
+        stackzoneea = new zonep[lenstack];
         stackzonel = new zonep[lenstack];
+        stackzonela = new zonep[lenstack];
+
+        vecpartit = new int[lenstack];
     }
 
     void alloc_lists()
@@ -429,8 +672,10 @@ class unblmedata
         for (i = 0; i < poistack_state; i++)
         {
             print_data(stacklposx[i], stacklposy[i]);
+            //Console.WriteLine("test_case_step({0},{1});", stackpieces[i], stackmoves[i]);
             Console.WriteLine();
         }
+
         Console.WriteLine("{0} moves.", poistack_moves);
         DateTime endetime = DateTime.Now;
         TimeSpan difftime = endetime - startime;
@@ -463,47 +708,14 @@ class unblmedata
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
 
-    void calc_enter_leave(piece piece, int posx, int posy, int diff, out zonep zonee, out zonep zonel)
+    void calc_enter_leave(piece piece, int posx, int posy, int diff, out zonep zonee, out zonep zoneea, out zonep zonel, out zonep zonela)
     {
-        int newposxe = 0;
-        int newposye = 0;
-        int newposxl = 0;
-        int newposyl = 0;
-        direction dire = piece.dire;
         if (diff == 0) throw new Exception("calc_enter_leave");
 
-        if (piece.dire == direction.horiz)
-        {
-            newposye = posy;
-            newposyl = posy;
-            if (diff > 0)
-            {
-                newposxe = posx + piece.length;
-                newposxl = posx;
-            }
-            else
-            {
-                newposxe = posx + diff;
-                newposxl = posx + piece.length + diff;
-            }
-        }
-        if (piece.dire == direction.verti)
-        {
-            newposxe = posx;
-            newposxl = posx;
-            if (diff > 0)
-            {
-                newposye = posy + piece.length;
-                newposyl = posy;
-            }
-            else
-            {
-                newposye = posy + diff;
-                newposyl = posy + piece.length + diff;
-            }
-        }
-        zonee = new zonep(dire, Math.Abs(diff), newposxe, newposye);
-        zonel = new zonep(dire, Math.Abs(diff), newposxl, newposyl);
+        getenterzone(piece, posx, posy, diff, out zonee);
+        getenterzonea(piece, posx, posy, diff, out zoneea);
+        getleavezone(piece, posx, posy, diff, out zonel);
+        getleavezonea(piece, posx, posy, diff, out zonela);
     }
 
     ////////////////////////////////////////////////////
@@ -529,10 +741,14 @@ class unblmedata
     void push_move(int i, int j)
     {
         zonep zonee, zonel;
+        zonep zoneea, zonela;
         stackpieces[poistack_moves] = i;
-        calc_enter_leave(lpiece[i], lposx[i], lposy[i], j, out zonee, out zonel);
+        stackmoves[poistack_moves] = j;
+        calc_enter_leave(lpiece[i], lposx[i], lposy[i], j, out zonee, out zoneea, out zonel, out zonela);
         stackzonee[poistack_moves] = zonee;
+        stackzoneea[poistack_moves] = zoneea;
         stackzonel[poistack_moves] = zonel;
+        stackzonela[poistack_moves] = zonela;
         poistack_moves++;
     }
 
@@ -564,48 +780,122 @@ class unblmedata
         return -1;
     }
 
-    bool moving_nopurpose()
+    bool is_indep(int i, int j)
     {
-        int depth = LENPURP;
-        int i;
-        if (poistack_moves < depth + 1) return false;
-        int val = stackpieces[poistack_moves - 1];
-        int posvaldown = poistack_moves - depth - 2;
-        for (i = posvaldown + 1; i < poistack_moves - 1; i++)
-        {
-            if (stackzonee[poistack_moves - 1].overlaps(stackzonel[i])) return false;
-        }
+        if (stackzoneea[i].overlaps(stackzonel[j])) return false;
+        if (stackzoneea[j].overlaps(stackzonel[i])) return false;
+        if (stackzonee[i].overlaps(stackzonela[j])) return false;
+        if (stackzonee[j].overlaps(stackzonela[i])) return false;
         return true;
     }
 
-    bool moving_cycles1()
+    bool is_nordered()
     {
-        bool foundl = false;
-        bool founde = false;
-        int posfoundl = -1;
-        int posfounde = -1;
+        if (poistack_moves < 2) return false;
+        if (is_indep(poistack_moves - 1, poistack_moves - 2))
+            return stackpieces[poistack_moves - 1] < stackpieces[poistack_moves - 2];
+        return false;
+    }
+
+    int FirstNIndepDown()
+    {
         int i;
-        if (poistack_moves < 3) return false;
+        for (i = poistack_state - 2; i >= 0; i--)
+            if (!is_indep(i, poistack_state - 1))
+                return i;
+        return -1;
+    }
+    int GetPartit(int posindep)
+    {
+        if (posindep == Int32.MaxValue)
+            return Int32.MinValue;
+        if (posindep == -1)
+            return vecpartit[0] + 1;
+        else
+            return vecpartit[posindep];
+    }
+
+    bool moving_nopurpose()
+    {
+        int partit;
+        //if (poistack_state == 0) return false;
+        //if (IsFirstTime()) return false;
+        int posindep = FirstNIndepDown();
+        partit = GetPartit(posindep);
+        return partit > LENPURP;
+    }
+
+    bool IsFirstTime()
+    {
+        if (poistack_moves < 2) return true;
         int val = stackpieces[poistack_moves - 1];
         int posvaldown = first_val(val);
-        if (posvaldown == -1)
-            return false;
-        for (i = posvaldown + 1; i < poistack_moves - 1; i++)
+        return posvaldown == -1;
+    }
+
+    bool moving_nopurpose1()
+    {
+        if (poistack_state == 0) return false;
+        if (IsFirstTime()) return false;
+        //if (IsFirstTime()) return LENPURP<poistack_state;
+        MakePartitDown(poistack_state);
+        int posindep = FirstNIndepDown();
+        int inf = GetInfLim(poistack_state - 1);
+        int sup = GetSupLim(posindep);
+        return sup + LENPURP < inf;
+    }
+
+    int GetSupLim(int pos)
+    {
+        int i;
+        if (pos == -1) return 0;
+        int partit = vecpartit[pos];
+        for (i = pos; vecpartit[i] == partit && i < poistack_state; i++) ;
+        return i - 1;
+    }
+
+    int GetInfLim(int pos)
+    {
+        int i;
+        int partit = vecpartit[pos];
+        i = pos;
+        while (i >= 0)
         {
-            if (stackzonel[posvaldown].overlaps(stackzonee[i])) { foundl = true; posfoundl = i; }
-            if (stackzonee[poistack_moves - 1].overlaps(stackzonel[i])) { founde = true; posfounde = i; }
+            if (vecpartit[i] != partit) return i + 1;
+            i--;
         }
-        if (!foundl) return true;
-        if (!founde) return true;
-        if (posfoundl > posfounde)
-            return true;
-        return false;
+        return i + 1;
+    }
+
+    bool AllCombIndep(int start, int end)
+    {
+        int i;
+        for (i = start; i <= end; i++)
+            if (!is_indep(start, i))
+                return false;
+        return true;
+    }
+
+    void MakePartitDown(int pos)
+    {
+        int i;
+        int lastpartitlimsup;
+        int crtpartitcount;
+        lastpartitlimsup = pos - 1;
+        crtpartitcount = 0;
+        for (i = pos - 1; i >= 0; vecpartit[i] = crtpartitcount, i--)
+        {
+            if (i == lastpartitlimsup) continue;
+
+            if (AllCombIndep(i, lastpartitlimsup)) continue;
+            else { lastpartitlimsup = i; crtpartitcount++; }
+        }
     }
 
     bool moving_cycles()
     {
-        bool foundl = false;
-        bool founde = false;
+        int foundl = 0;
+        int founde = 0;
         int minposfoundl = Int32.MaxValue;
         int minposfounde = Int32.MaxValue;
         int maxposfoundl = -1;
@@ -618,40 +908,288 @@ class unblmedata
             return false;
         for (i = posvaldown + 1; i < poistack_moves - 1; i++)
         {
-            if (stackzonel[posvaldown].overlaps(stackzonee[i]))
+            if (stackzonela[posvaldown].overlaps(stackzonee[i]) || stackzonel[posvaldown].overlaps(stackzoneea[i]))
+            //if (!is_indep(posvaldown, i))
             {
-                foundl = true;
-                if (i < minposfoundl)
+                foundl++;
+                if (GetPartit(i) > GetPartit(minposfoundl))
                     minposfoundl = i;
-                if (i > maxposfoundl)
+                if (GetPartit(i) < GetPartit(maxposfoundl))
                     maxposfoundl = i;
             }
-            if (stackzonee[poistack_moves - 1].overlaps(stackzonel[i]))
+            if (stackzoneea[poistack_moves - 1].overlaps(stackzonel[i]) || stackzonee[poistack_moves - 1].overlaps(stackzonela[i]))
+            //if (!is_indep(poistack_moves - 1, i))
             {
-                founde = true;
-                if (i < minposfounde)
+                founde++;
+                if (GetPartit(i) > GetPartit(minposfounde))
                     minposfounde = i;
-                if (i > maxposfounde)
+                if (GetPartit(i) < GetPartit(maxposfounde))
                     maxposfounde = i;
             }
         }
-        if (!foundl) return true;
-        if (!founde) return true;
 
-        if (maxposfoundl > maxposfounde)
-            return true;
-        if (minposfoundl > minposfounde)
-            return true;
+        if (foundl == 0) return true;
+        if (founde == 0) return true;
+        //if (minposfoundl != maxposfoundl)Console.WriteLine("min={0} max={1}", minposfoundl, maxposfoundl);
+        //if (minposfounde != maxposfounde)Console.WriteLine("min={0} max={1}", minposfounde, maxposfounde);
+        if (strategy == strategycycles.none) return false;
+
+        if (strategy == strategycycles.weak)
+            if (GetPartit(minposfoundl) < GetPartit(maxposfounde))
+                return true;
+
+        if (strategy == strategycycles.medium)
+        {
+            if (GetPartit(maxposfoundl) < GetPartit(maxposfounde))
+                return true;
+            if (GetPartit(minposfoundl) < GetPartit(minposfounde))
+                return true;
+        }
+        if (strategy == strategycycles.strong)
+            if (GetPartit(maxposfoundl) < GetPartit(minposfounde))
+                return true;
 
         return false;
     }
 
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
+    void test_case_step(int i, int j)
+    {
+        push_state();
+        push_move(i, j);
+        move_ind(i, j);
+        Console.WriteLine();
+        print_data(lposx, lposy);
+        if (data_exists_before())
+            Console.WriteLine("BEFORE !!!");
+        if (!was_good_move())
+            Console.WriteLine("NOT GOOD !!!");
+        if (is_final())
+            Console.WriteLine("FINAL !!!");
+    }
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    public void test_case003()
+    {
+        test_case_step(4, 1);
+        test_case_step(7, -1);
+        test_case_step(9, 1);
+        test_case_step(1, 2);
+        test_case_step(3, 1);
+        test_case_step(6, -2);
+        test_case_step(7, -1);
+        test_case_step(8, -1);
+        test_case_step(10, 3);
+        test_case_step(8, 1);
+        test_case_step(7, 1);
+        test_case_step(6, 3);
+        test_case_step(3, -1);
+        test_case_step(1, -1);
+        test_case_step(4, -1);
+        test_case_step(7, -1);
+        test_case_step(8, -2);
+        test_case_step(9, -3);
+        test_case_step(10, -2);
+        test_case_step(1, 2);
+        test_case_step(5, 2);
+        test_case_step(2, 2);
+        test_case_step(0, 3);
+        test_case_step(3, 3);
+        test_case_step(8, -2);
+        test_case_step(4, 1);
+        test_case_step(7, 1);
+        test_case_step(6, -4);
+        test_case_step(4, -1);
+        test_case_step(7, -1);
+        test_case_step(9, -1);
+        test_case_step(8, 4);
+        test_case_step(0, -1);
+        test_case_step(3, -2);
+        test_case_step(2, -2);
+
+        Console.ReadKey();
+    }
+    public void test_case007c()
+    {
+        test_case_step(5, 1);
+        test_case_step(7, -3);
+        test_case_step(8, -1);
+        test_case_step(9, -1);
+        test_case_step(11, 1);
+        test_case_step(3, 3);
+        test_case_step(4, -2);
+        test_case_step(5, 1);
+        test_case_step(0, 1);
+        test_case_step(8, 1);
+        test_case_step(7, 1);
+        test_case_step(1, -2);
+        test_case_step(2, -2);
+        test_case_step(6, -2);
+        test_case_step(8, 1);
+        test_case_step(0, 3);
+        test_case_step(4, -1);
+        test_case_step(5, -1);
+        test_case_step(8, -1);
+        test_case_step(6, 1);
+        test_case_step(2, 1);
+        test_case_step(1, 1);
+        test_case_step(7, -1);
+        test_case_step(8, -1);
+        test_case_step(3, -3);
+        test_case_step(8, 1);
+        test_case_step(7, 3);
+        test_case_step(1, -1);
+        test_case_step(2, -1);
+        test_case_step(4, -1);
+        test_case_step(5, -1);
+        test_case_step(6, -1);
+        test_case_step(9, -2);
+        test_case_step(8, 2);
+        test_case_step(10, -3);
+        test_case_step(8, -2);
+        test_case_step(11, -2);
+        test_case_step(6, 3);
+        test_case_step(9, 3);
+        test_case_step(2, 2);
+        test_case_step(3, -1);
+        test_case_step(10, -1);
+        Console.ReadKey();
+    }
+
+    public void test_case018()
+    {
+        test_case_step(1, 1);
+        test_case_step(0, 3);
+        test_case_step(2, -1);
+        test_case_step(4, 1);
+        test_case_step(6, -3);
+        test_case_step(7, -1);
+        test_case_step(1, 1);
+        test_case_step(3, -1);
+        test_case_step(5, -1);
+        test_case_step(8, -1);
+        test_case_step(9, 1);
+        test_case_step(10, -1);
+        test_case_step(11, 1);
+        test_case_step(1, 2);
+        test_case_step(4, 2);
+        test_case_step(2, 1);
+        test_case_step(0, -2);
+        test_case_step(5, -1);
+        test_case_step(7, 3);
+        test_case_step(2, 3);
+        test_case_step(3, -2);
+        test_case_step(4, -2);
+        test_case_step(7, -3);
+        test_case_step(1, -3);
+        test_case_step(7, 1);
+        test_case_step(6, 1);
+        test_case_step(0, -1);
+        test_case_step(1, -1);
+        test_case_step(9, -1);
+        test_case_step(11, -1);
+        test_case_step(5, 3);
+        Console.ReadKey();
+    }
+    public void test_case391m()
+    {
+        test_case_step(4, -1);
+        test_case_step(7, -1);
+        test_case_step(9, -1);
+        test_case_step(11, 3);
+        test_case_step(6, 2);
+        test_case_step(5, 1);
+        test_case_step(8, 1);
+        test_case_step(0, 4);
+        test_case_step(1, -1);
+        test_case_step(5, -1);
+        test_case_step(7, -1);
+        test_case_step(8, -1);
+        test_case_step(6, -2);
+        test_case_step(9, -1);
+        test_case_step(10, -3);
+        test_case_step(2, 3);
+        test_case_step(3, 3);
+        test_case_step(11, -2);
+        test_case_step(9, 2);
+        test_case_step(7, 2);
+        test_case_step(1, 3);
+        test_case_step(4, 3);
+        test_case_step(6, -2);
+        test_case_step(5, 1);
+        test_case_step(8, 1);
+        test_case_step(0, -4);
+        test_case_step(5, -1);
+        test_case_step(8, -1);
+        test_case_step(10, -1);
+        test_case_step(6, 3);
+        test_case_step(5, 1);
+        test_case_step(0, 1);
+        test_case_step(1, -3);
+        test_case_step(7, -2);
+        Console.ReadKey();
+    }
+
+    public void test_case399()
+    {
+        test_case_step(2, -1);
+        test_case_step(4, 1);
+        test_case_step(6, 1);
+        test_case_step(8, -4);
+        test_case_step(4, -1);
+        test_case_step(6, -1);
+        test_case_step(2, 2);
+        test_case_step(9, -1);
+        test_case_step(5, 1);
+        test_case_step(0, 1);
+        test_case_step(1, -3);
+        test_case_step(0, -1);
+        test_case_step(3, -1);
+        test_case_step(5, -1);
+        test_case_step(7, -1);
+        test_case_step(9, 3);
+        test_case_step(10, 2);
+        test_case_step(2, 2);
+        test_case_step(4, 1);
+        test_case_step(6, 1);
+        test_case_step(8, 4);
+        test_case_step(1, -1);
+        test_case_step(4, -1);
+        test_case_step(6, -1);
+        test_case_step(2, -4);
+        test_case_step(4, 1);
+        test_case_step(6, 1);
+        test_case_step(8, -3);
+        test_case_step(9, -3);
+        test_case_step(5, 1);
+        test_case_step(7, 1);
+    }
+
+    public void test_casetest()
+    {
+        bool test;
+        test_case_step(0, 3);
+        test_case_step(1, -3);
+        test = stackzoneea[1].overlaps(stackzonel[0]) ||
+        stackzonee[1].overlaps(stackzonela[0]);
+        test = stackzonela[0].overlaps(stackzonee[1]) ||
+   stackzonel[0].overlaps(stackzoneea[1]);
+
+        test = is_indep(1, 0);
+    }
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
     bool was_good_move()
     {
+        if (is_nordered()) return false;
+        if (IsFirstTime()) return true;
+        MakePartitDown(poistack_state);
         if (moving_cycles()) return false;
-        if (moving_nopurpose()) return false;
+        if (LENPURP != 0)
+            if (moving_nopurpose()) return false;
         return true;
     }
 
@@ -750,6 +1288,7 @@ class unblmedata
     public void recursion()
     {
         countmoves++;
+        if ((countmoves % 1000000) == 0) Console.Write("+");
         if (is_final())
         {
             push_state();
@@ -758,7 +1297,13 @@ class unblmedata
             Environment.Exit(0);
         }
         if (MAXDEPTH != 0)
-            if (poistack_state == MAXDEPTH) return;//some limitation
+            if (poistack_state == MAXDEPTH)
+            {
+                //makehash();
+                //push_hash_eventually_update();
+
+                return;//some limitation
+            }
         stack_make_nexts_and_make_moves();
     }
 
@@ -874,33 +1419,70 @@ class unblmedata
         ret.exity = arrbytes[2 + ret.lenx * ret.leny + 2] - '0';
         return ret;
     }
-
 }
 
 class unblme
 {
     static void Main(String[] arrstr)
     {
-        String namefile = arrstr[0];
-        String strmaxrec = arrstr[1];
-        String strmaxpurp = arrstr[2];
-
+        String namefile = null;
+        String strmaxrec = "50";
+        String strmaxpurp = "4";
+        String strstrategy = "medium";
+        int i;
+        int len;
+        String arg;
+        String optarg;
+        Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
+        len = arrstr.Length;
+        for (i = 0; i < len; i++)
+        {
+            arg = arrstr[i];
+            optarg = arg.Substring(0, 2);
+            arg = arg.Substring(2);
+            if (optarg == "-i")
+            { namefile = arg; continue; }
+            if (optarg == "-d")
+            { strmaxrec = arg; continue; }
+            if (optarg == "-l")
+            { strmaxpurp = arg; continue; }
+            if (optarg == "-s")
+            { strstrategy = arg; continue; }
+        }
         unblmedata vunblmedata = unblmedata.GetUnblMeData(namefile);
         vunblmedata.MAXDEPTH = Int32.Parse(strmaxrec);
         vunblmedata.LENPURP = Int32.Parse(strmaxpurp);
+        if (strstrategy == "none")
+            vunblmedata.strategy = unblmedata.strategycycles.none;
+        if (strstrategy == "weak")
+            vunblmedata.strategy = unblmedata.strategycycles.weak;
+        if (strstrategy == "medium")
+            vunblmedata.strategy = unblmedata.strategycycles.medium;
+        if (strstrategy == "strong")
+            vunblmedata.strategy = unblmedata.strategycycles.strong;
         Console.WriteLine("MAXDEPTH={0}", vunblmedata.MAXDEPTH);
         Console.WriteLine("LENPURP={0}", vunblmedata.LENPURP);
+        Console.WriteLine("strategy={0}", vunblmedata.strategy);
 
         Console.WriteLine("initial");
+        //unblmedata.testoverlaps(); Console.ReadKey(); return;
         vunblmedata.print_data(vunblmedata.lposx, vunblmedata.lposy);
         Console.WriteLine("starting computing...");
         vunblmedata.startime = DateTime.Now;
         vunblmedata.countmoves = 0;
+        //vunblmedata.test_case003();
+        //vunblmedata.test_case007c();
+        //vunblmedata.test_case018();
+        //vunblmedata.test_case391m();
+        //vunblmedata.test_case399();
+        //vunblmedata.test_casetest();
+
         vunblmedata.recursion();
+
         Console.WriteLine("No sol. found. press a key...");
+        Console.WriteLine("{0} moves.", vunblmedata.countmoves);
         Console.ReadKey();
     }
 }
 //  A  B  C  D  E  F  G  H  I  J  K  L
-//  1  2  3  4  5  6  7  8  9 10 11 12
-
+//  0  1  2  3  4  5  6  7  8  9 10 11
