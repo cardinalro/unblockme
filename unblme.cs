@@ -366,6 +366,7 @@ class unblmedata
     ////////////////////////////////////////////////////
     public DateTime startime;
     public int countmoves;
+    public long countindeps;
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
     public enum strategycycles
@@ -415,6 +416,8 @@ class unblmedata
         stackzonela = new zonep[lenstack];
 
         vecpartit = new int[lenstack];
+        stack_lim_inf_partit = new int[lenstack];
+        stack_lim_sup_partit = new int[lenstack];
     }
 
     void alloc_lists()
@@ -671,9 +674,10 @@ class unblmedata
         int i;
         for (i = 0; i < poistack_state; i++)
         {
-            print_data(stacklposx[i], stacklposy[i]);
+            //Console.WriteLine("{0} :", poistack_state);
+            //print_data(stacklposx[i], stacklposy[i]);
             //Console.WriteLine("test_case_step({0},{1});", stackpieces[i], stackmoves[i]);
-            Console.WriteLine();
+            //Console.WriteLine();
         }
 
         Console.WriteLine("{0} moves.", poistack_moves);
@@ -681,6 +685,7 @@ class unblmedata
         TimeSpan difftime = endetime - startime;
         Console.WriteLine("Run Time {0}", difftime);
         Console.WriteLine("recursion called {0} times", countmoves);
+        Console.WriteLine("is_indep called {0} times.", countindeps);
     }
 
     ////////////////////////////////////////////////////
@@ -782,6 +787,7 @@ class unblmedata
 
     bool is_indep(int i, int j)
     {
+        countindeps++;
         if (stackzoneea[i].overlaps(stackzonel[j])) return false;
         if (stackzoneea[j].overlaps(stackzonel[i])) return false;
         if (stackzonee[i].overlaps(stackzonela[j])) return false;
@@ -891,11 +897,103 @@ class unblmedata
             else { lastpartitlimsup = i; crtpartitcount++; }
         }
     }
+    #region path verif
+    int poi_lims_partit;
+    int[] stack_lim_inf_partit;
+    int[] stack_lim_sup_partit;
+    #region stacks partit
+    void reset_stack_partit()
+    {
+        poi_lims_partit = 0;
+    }
+    void push_lim_partit(int inf, int sup)
+    {
+        stack_lim_inf_partit[poi_lims_partit] = inf;
+        stack_lim_sup_partit[poi_lims_partit] = sup;
+        poi_lims_partit++;
+    }
+
+    void make_stack_lims()
+    {
+        int k;
+        int val;
+        int cou;
+        reset_stack_partit();
+        if (poistack_moves == 0) return;
+        val = vecpartit[0];
+        cou = 0;
+        int star, ende;
+        star = 0; ende = 0;
+        for (k = 0; k < poistack_moves; k++)
+            if (vecpartit[k] == val)
+            {
+                cou++;
+                ende = k;
+            }
+            else
+            {
+                cou = 0;
+                val = vecpartit[k];
+                push_lim_partit(star, ende);
+                star = k;
+                ende = k;
+            }
+        push_lim_partit(star, ende);
+    }
+    #endregion
+    #region partit recursive
+
+    int rank_partit(int pos)
+    {
+        int i;
+        for (i = 0; i < poi_lims_partit; i++)
+            if (stack_lim_inf_partit[i] <= pos && pos <= stack_lim_sup_partit[i])
+                return i;
+        throw new Exception("rank_partit");
+    }
+    bool exists_cale(int pos, int end)
+    {
+        make_stack_lims();
+        return exists_pos_to_end(pos, end);
+    }
+
+    bool exists_pos_to_end(int pos, int end)
+    {
+        int k;
+        int rank;
+        int star;
+        int ende;
+
+        rank = rank_partit(pos);
+
+        if (vecpartit[pos] - 1 == vecpartit[end])
+            return !is_indep(pos, end);
+        star = stack_lim_inf_partit[rank + 1];
+        ende = stack_lim_sup_partit[rank + 1];
+        for (k = star; k <= ende; k++)
+            if (!is_indep(pos, k))
+                if (exists_pos_to_end(k, end))
+                    return true;
+        return false;
+    }
+
+    void print_lim_inf_partit()
+    {
+        int k;
+        for (k = 0; k < poi_lims_partit; k++)
+            Console.WriteLine("{0} {1}", stack_lim_inf_partit[k], stack_lim_sup_partit[k]);
+
+    }
+    #endregion
+
+    #endregion
 
     bool moving_cycles()
     {
         int foundl = 0;
         int founde = 0;
+        int movel = 0;
+        int movee = 0;
         int minposfoundl = Int32.MaxValue;
         int minposfounde = Int32.MaxValue;
         int maxposfoundl = -1;
@@ -906,6 +1004,9 @@ class unblmedata
         int posvaldown = first_val(val);
         if (posvaldown == -1)
             return false;
+        movel = stackmoves[posvaldown];
+        movee = stackmoves[poistack_moves - 1];
+
         for (i = posvaldown + 1; i < poistack_moves - 1; i++)
         {
             if (stackzonela[posvaldown].overlaps(stackzonee[i]) || stackzonel[posvaldown].overlaps(stackzoneea[i]))
@@ -927,7 +1028,7 @@ class unblmedata
                     maxposfounde = i;
             }
         }
-
+        //    minposfoundl    maxposfoundl    minposfounde    maxposfounde
         if (foundl == 0) return true;
         if (founde == 0) return true;
         //if (minposfoundl != maxposfoundl)Console.WriteLine("min={0} max={1}", minposfoundl, maxposfoundl);
@@ -940,14 +1041,27 @@ class unblmedata
 
         if (strategy == strategycycles.medium)
         {
+
+            //if (GetPartit(minposfoundl) < GetPartit(maxposfounde))
+            //    if (!exists_cale(maxposfounde, minposfoundl))
+            //        return true;//weak
+
+
             if (GetPartit(maxposfoundl) < GetPartit(maxposfounde))
-                return true;
-            if (GetPartit(minposfoundl) < GetPartit(minposfounde))
-                return true;
+                if (!exists_cale(maxposfounde, maxposfoundl))
+                    return true;
+            //if (GetPartit(minposfoundl) < GetPartit(minposfounde))
+            //    if (!exists_cale(minposfounde, minposfoundl))
+            //        return true;
+
+            if (GetPartit(maxposfoundl) < GetPartit(minposfounde))
+                if (!exists_cale(minposfounde, maxposfoundl))
+                    return true;//strong
         }
         if (strategy == strategycycles.strong)
             if (GetPartit(maxposfoundl) < GetPartit(minposfounde))
-                return true;
+                if (!exists_cale(minposfounde, maxposfoundl))
+                    return true;
 
         return false;
     }
@@ -960,6 +1074,7 @@ class unblmedata
         push_move(i, j);
         move_ind(i, j);
         Console.WriteLine();
+        Console.WriteLine("{0} :", poistack_state);
         print_data(lposx, lposy);
         if (data_exists_before())
             Console.WriteLine("BEFORE !!!");
@@ -1011,6 +1126,42 @@ class unblmedata
 
         Console.ReadKey();
     }
+    public void test_case006()
+    {
+        test_case_step(2, 1);
+        test_case_step(11, 1);
+        test_case_step(3, 2);
+        test_case_step(4, -1);
+        test_case_step(5, -1);
+        test_case_step(7, -2);
+        test_case_step(9, -2);
+        test_case_step(6, 1);
+        test_case_step(1, 1);
+        test_case_step(0, 3);
+        test_case_step(7, -1);
+        test_case_step(5, 1);
+        test_case_step(3, -1);
+        test_case_step(11, -1);
+        test_case_step(6, 1);
+        test_case_step(8, -3);
+        test_case_step(10, -3);
+        test_case_step(8, 3);
+        test_case_step(6, -1);
+        test_case_step(11, 1);
+        test_case_step(3, 1);
+        test_case_step(5, -1);
+        test_case_step(7, 1);
+        test_case_step(0, -3);
+        test_case_step(1, -1);
+        test_case_step(2, -1);
+        test_case_step(6, -1);
+        test_case_step(9, 3);
+        test_case_step(6, 1);
+        test_case_step(7, 2);
+        test_case_step(10, -1);
+        Console.ReadKey();
+    }
+
     public void test_case007c()
     {
         test_case_step(5, 1);
@@ -1055,6 +1206,40 @@ class unblmedata
         test_case_step(2, 2);
         test_case_step(3, -1);
         test_case_step(10, -1);
+        Console.ReadKey();
+    }
+    public void test_case011()
+    {
+        test_case_step(2, -1);
+        test_case_step(3, -1);
+        test_case_step(6, 1);
+        test_case_step(7, 1);
+        test_case_step(9, -2);
+        test_case_step(8, 3);
+        test_case_step(5, 2);
+        test_case_step(9, 2);
+        test_case_step(7, -4);
+        test_case_step(5, -2);
+        test_case_step(9, -2);
+        test_case_step(8, -3);
+        test_case_step(0, 3);
+        test_case_step(3, 3);
+        test_case_step(9, 2);
+        test_case_step(2, 2);
+        test_case_step(1, 3);
+        test_case_step(5, -2);
+        test_case_step(4, 1);
+        test_case_step(7, 1);
+        test_case_step(6, -4);
+        test_case_step(4, -1);
+        test_case_step(7, -1);
+        test_case_step(8, -1);
+        test_case_step(5, 4);
+        test_case_step(4, 1);
+        test_case_step(7, 1);
+        test_case_step(6, 2);
+        test_case_step(1, -3);
+        test_case_step(2, -2);
         Console.ReadKey();
     }
 
@@ -1195,6 +1380,7 @@ class unblmedata
 
     bool data_exists_before()
     {
+        //return false;
         int i;
         for (i = 0; i < poistack_state; i++)
         {
@@ -1470,8 +1656,11 @@ class unblme
         Console.WriteLine("starting computing...");
         vunblmedata.startime = DateTime.Now;
         vunblmedata.countmoves = 0;
+        vunblmedata.countindeps = 0;
         //vunblmedata.test_case003();
+        //vunblmedata.test_case006();
         //vunblmedata.test_case007c();
+        //vunblmedata.test_case011();
         //vunblmedata.test_case018();
         //vunblmedata.test_case391m();
         //vunblmedata.test_case399();
@@ -1481,6 +1670,7 @@ class unblme
 
         Console.WriteLine("No sol. found. press a key...");
         Console.WriteLine("{0} moves.", vunblmedata.countmoves);
+        Console.WriteLine("is_indep called {0} times.", vunblmedata.countindeps);
         Console.ReadKey();
     }
 }
