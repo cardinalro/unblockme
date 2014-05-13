@@ -358,10 +358,10 @@ class unblmedata
     zonep[] stackzonela;
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
-    int[] vecpartit;
+    int[] vecglued;
     ////////////////////////////////////////////////////
     public int MAXDEPTH = 0;
-    public int LENPURP = 4;
+    public int LENPURP = 0;
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
     public DateTime startime;
@@ -415,9 +415,7 @@ class unblmedata
         stackzonel = new zonep[lenstack];
         stackzonela = new zonep[lenstack];
 
-        vecpartit = new int[lenstack];
-        stack_lim_inf_partit = new int[lenstack];
-        stack_lim_sup_partit = new int[lenstack];
+        vecglued = new int[lenstack];
     }
 
     void alloc_lists()
@@ -675,8 +673,9 @@ class unblmedata
         for (i = 0; i < poistack_state; i++)
         {
             //Console.WriteLine("{0} :", poistack_state);
-            //print_data(stacklposx[i], stacklposy[i]);
-            //Console.WriteLine("test_case_step({0},{1});", stackpieces[i], stackmoves[i]);
+            Console.WriteLine("data no {0} :", i);
+            print_data(stacklposx[i], stacklposy[i]);
+            Console.WriteLine(@"test_case_step({0},{1});\\{2}", stackpieces[i], stackmoves[i], (char)('A' + stackpieces[i]));
             //Console.WriteLine();
         }
 
@@ -811,25 +810,6 @@ class unblmedata
                 return i;
         return -1;
     }
-    int GetPartit(int posindep)
-    {
-        if (posindep == Int32.MaxValue)
-            return Int32.MinValue;
-        if (posindep == -1)
-            return vecpartit[0] + 1;
-        else
-            return vecpartit[posindep];
-    }
-
-    bool moving_nopurpose()
-    {
-        int partit;
-        //if (poistack_state == 0) return false;
-        //if (IsFirstTime()) return false;
-        int posindep = FirstNIndepDown();
-        partit = GetPartit(posindep);
-        return partit > LENPURP;
-    }
 
     bool IsFirstTime()
     {
@@ -839,230 +819,177 @@ class unblmedata
         return posvaldown == -1;
     }
 
-    bool moving_nopurpose1()
-    {
-        if (poistack_state == 0) return false;
-        if (IsFirstTime()) return false;
-        //if (IsFirstTime()) return LENPURP<poistack_state;
-        MakePartitDown(poistack_state);
-        int posindep = FirstNIndepDown();
-        int inf = GetInfLim(poistack_state - 1);
-        int sup = GetSupLim(posindep);
-        return sup + LENPURP < inf;
-    }
-
-    int GetSupLim(int pos)
+    void MakeGluedDown(int pos)
     {
         int i;
-        if (pos == -1) return 0;
-        int partit = vecpartit[pos];
-        for (i = pos; vecpartit[i] == partit && i < poistack_state; i++) ;
-        return i - 1;
-    }
-
-    int GetInfLim(int pos)
-    {
-        int i;
-        int partit = vecpartit[pos];
-        i = pos;
-        while (i >= 0)
+        int crtpos = 0;
+        if (pos == 0) return;
+        vecglued[pos - 1] = crtpos;
+        for (i = pos - 2; i >= 0; i--)
         {
-            if (vecpartit[i] != partit) return i + 1;
-            i--;
+            if (is_indep(i, i + 1))
+                crtpos++;
+            vecglued[i] = crtpos;
         }
-        return i + 1;
     }
 
-    bool AllCombIndep(int start, int end)
+    bool GlueIndep(int pos, int g1)
     {
         int i;
-        for (i = start; i <= end; i++)
-            if (!is_indep(start, i))
-                return false;
+        for (i = 0; i < poistack_state; i++)
+            if (vecglued[i] == g1)
+            {
+                if (!is_indep(pos, i))
+                    return false;
+            }
         return true;
     }
 
-    void MakePartitDown(int pos)
+    bool TwoGluedIndep(int g1, int g2)
     {
         int i;
-        int lastpartitlimsup;
-        int crtpartitcount;
-        lastpartitlimsup = pos - 1;
-        crtpartitcount = 0;
-        for (i = pos - 1; i >= 0; vecpartit[i] = crtpartitcount, i--)
-        {
-            if (i == lastpartitlimsup) continue;
-
-            if (AllCombIndep(i, lastpartitlimsup)) continue;
-            else { lastpartitlimsup = i; crtpartitcount++; }
-        }
-    }
-    #region path verif
-    int poi_lims_partit;
-    int[] stack_lim_inf_partit;
-    int[] stack_lim_sup_partit;
-    #region stacks partit
-    void reset_stack_partit()
-    {
-        poi_lims_partit = 0;
-    }
-    void push_lim_partit(int inf, int sup)
-    {
-        stack_lim_inf_partit[poi_lims_partit] = inf;
-        stack_lim_sup_partit[poi_lims_partit] = sup;
-        poi_lims_partit++;
-    }
-
-    void make_stack_lims()
-    {
-        int k;
-        int val;
-        int cou;
-        reset_stack_partit();
-        if (poistack_moves == 0) return;
-        val = vecpartit[0];
-        cou = 0;
-        int star, ende;
-        star = 0; ende = 0;
-        for (k = 0; k < poistack_moves; k++)
-            if (vecpartit[k] == val)
+        for (i = 0; i < poistack_state; i++)
+            if (vecglued[i] == g1)
             {
-                cou++;
-                ende = k;
+                if (!GlueIndep(i, g2))
+                    return false;
             }
             else
-            {
-                cou = 0;
-                val = vecpartit[k];
-                push_lim_partit(star, ende);
-                star = k;
-                ende = k;
-            }
-        push_lim_partit(star, ende);
+                continue;
+        return true;
     }
-    #endregion
-    #region partit recursive
 
-    int rank_partit(int pos)
+    void PrintGlue(int g)
     {
         int i;
-        for (i = 0; i < poi_lims_partit; i++)
-            if (stack_lim_inf_partit[i] <= pos && pos <= stack_lim_sup_partit[i])
-                return i;
-        throw new Exception("rank_partit");
-    }
-    bool exists_cale(int pos, int end)
-    {
-        make_stack_lims();
-        return exists_pos_to_end(pos, end);
+        for (i = 0; i < poistack_state; i++)
+            if (vecglued[i] == g)
+                Console.Write("{0} ", i);
+            else
+                continue;
+        Console.WriteLine();
     }
 
-    bool exists_pos_to_end(int pos, int end)
+    int GetValPosGlue(int g, int pos)
     {
-        int k;
-        int rank;
-        int star;
-        int ende;
+        int i;
+        int poi = -1;
+        for (i = 0; i < poistack_state; i++)
+            if (vecglued[i] == g)
+            {
+                poi++;
+                if (poi == pos)
+                    return i;
+            }
+            else
+                continue;
+        return -1;
+    }
 
-        rank = rank_partit(pos);
+    int GetMaxGlue()
+    {
+        int i;
+        int max = -1;
+        for (i = 0; i < poistack_state; i++)
+            if (vecglued[i] > max)
+                max = vecglued[i];
+        return max;
+    }
 
-        if (vecpartit[pos] - 1 == vecpartit[end])
-            return !is_indep(pos, end);
-        star = stack_lim_inf_partit[rank + 1];
-        ende = stack_lim_sup_partit[rank + 1];
-        for (k = star; k <= ende; k++)
-            if (!is_indep(pos, k))
-                if (exists_pos_to_end(k, end))
+    bool TwoGluedMMic1(int g1, int g2)
+    {
+        int p1;
+        int p2;
+        p1 = GetValPosGlue(g1, 0);
+        p2 = GetValPosGlue(g2, 0);
+        return stackpieces[p1] < stackpieces[p2];
+        int poi = 0;
+        while (true)
+        {
+            p1 = GetValPosGlue(g1, poi);
+            p2 = GetValPosGlue(g2, poi);
+            if (p1 == -1 || p2 == -1) return false;
+            if (stackpieces[p1] > stackpieces[p2]) return false;
+            poi++;
+        }
+    }
+
+    bool TwoGluedMMic(int g1, int g2)
+    {
+        int p1;
+        p1 = GetValPosGlue(g1, 0);
+        return ExistsOneMMic(g2, p1);
+    }
+
+    bool TwoGluedMMic2(int g1, int g2)
+    {
+        int i;
+        for (i = 0; i < poistack_state; i++)
+        {
+            if (vecglued[i] == g1)
+                if (ExistsOneMMic(g2, i))
                     return true;
+        }
         return false;
     }
 
-    void print_lim_inf_partit()
+    bool ExistsOneMMic(int g, int pos)
     {
-        int k;
-        for (k = 0; k < poi_lims_partit; k++)
-            Console.WriteLine("{0} {1}", stack_lim_inf_partit[k], stack_lim_sup_partit[k]);
-
+        int i;
+        for (i = 0; i < poistack_state; i++)
+            if (vecglued[i] == g)
+            {
+                if (stackpieces[i] > stackpieces[pos]) return true;
+            }
+        return false;
     }
-    #endregion
 
-    #endregion
+
+    bool is_glue_nordered()
+    {
+        bool ret;
+        if (poistack_moves < 2) return false;
+        if (GetMaxGlue() < 1) return false;
+
+        if (TwoGluedIndep(0, 1))
+        {
+            ret = TwoGluedMMic(0, 1);
+            if (ret)
+                return true;
+            else
+                return false;
+        }
+
+        return false;
+    }
+
 
     bool moving_cycles()
     {
-        int foundl = 0;
-        int founde = 0;
-        int movel = 0;
-        int movee = 0;
-        int minposfoundl = Int32.MaxValue;
-        int minposfounde = Int32.MaxValue;
-        int maxposfoundl = -1;
-        int maxposfounde = -1;
+        bool foundl = false;
+        bool founde = false;
         int i;
         if (poistack_moves < 3) return false;
         int val = stackpieces[poistack_moves - 1];
         int posvaldown = first_val(val);
         if (posvaldown == -1)
             return false;
-        movel = stackmoves[posvaldown];
-        movee = stackmoves[poistack_moves - 1];
 
         for (i = posvaldown + 1; i < poistack_moves - 1; i++)
         {
             if (stackzonela[posvaldown].overlaps(stackzonee[i]) || stackzonel[posvaldown].overlaps(stackzoneea[i]))
             //if (!is_indep(posvaldown, i))
             {
-                foundl++;
-                if (GetPartit(i) > GetPartit(minposfoundl))
-                    minposfoundl = i;
-                if (GetPartit(i) < GetPartit(maxposfoundl))
-                    maxposfoundl = i;
+                foundl = true;
             }
             if (stackzoneea[poistack_moves - 1].overlaps(stackzonel[i]) || stackzonee[poistack_moves - 1].overlaps(stackzonela[i]))
             //if (!is_indep(poistack_moves - 1, i))
             {
-                founde++;
-                if (GetPartit(i) > GetPartit(minposfounde))
-                    minposfounde = i;
-                if (GetPartit(i) < GetPartit(maxposfounde))
-                    maxposfounde = i;
+                founde = true;
             }
         }
-        //    minposfoundl    maxposfoundl    minposfounde    maxposfounde
-        if (foundl == 0) return true;
-        if (founde == 0) return true;
-        //if (minposfoundl != maxposfoundl)Console.WriteLine("min={0} max={1}", minposfoundl, maxposfoundl);
-        //if (minposfounde != maxposfounde)Console.WriteLine("min={0} max={1}", minposfounde, maxposfounde);
-        if (strategy == strategycycles.none) return false;
-
-        if (strategy == strategycycles.weak)
-            if (GetPartit(minposfoundl) < GetPartit(maxposfounde))
-                return true;
-
-        if (strategy == strategycycles.medium)
-        {
-
-            //if (GetPartit(minposfoundl) < GetPartit(maxposfounde))
-            //    if (!exists_cale(maxposfounde, minposfoundl))
-            //        return true;//weak
-
-
-            if (GetPartit(maxposfoundl) < GetPartit(maxposfounde))
-                if (!exists_cale(maxposfounde, maxposfoundl))
-                    return true;
-            //if (GetPartit(minposfoundl) < GetPartit(minposfounde))
-            //    if (!exists_cale(minposfounde, minposfoundl))
-            //        return true;
-
-            if (GetPartit(maxposfoundl) < GetPartit(minposfounde))
-                if (!exists_cale(minposfounde, maxposfoundl))
-                    return true;//strong
-        }
-        if (strategy == strategycycles.strong)
-            if (GetPartit(maxposfoundl) < GetPartit(minposfounde))
-                if (!exists_cale(minposfounde, maxposfoundl))
-                    return true;
-
+        if (!foundl) return true;
+        if (!founde) return true;
         return false;
     }
 
@@ -1369,12 +1296,16 @@ class unblmedata
     ////////////////////////////////////////////////////
     bool was_good_move()
     {
-        if (is_nordered()) return false;
-        if (IsFirstTime()) return true;
-        MakePartitDown(poistack_state);
         if (moving_cycles()) return false;
-        if (LENPURP != 0)
-            if (moving_nopurpose()) return false;
+        if (is_nordered()) return false;
+
+        //if (IsFirstTime()) return true;
+        MakeGluedDown(poistack_state);
+        if (is_glue_nordered())
+            //{
+            //    Console.WriteLine("is_glue_nordered"); print_stack(); PrintGlue(1); PrintGlue(0); Console.WriteLine("end is_glue_nordered"); Console.ReadKey();
+            return false;
+        //}
         return true;
     }
 
@@ -1613,8 +1544,8 @@ class unblme
     {
         String namefile = null;
         String strmaxrec = "50";
-        String strmaxpurp = "4";
-        String strstrategy = "medium";
+        String strmaxpurp = "0";
+        String strstrategy = "none";
         int i;
         int len;
         String arg;
