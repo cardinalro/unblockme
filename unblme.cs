@@ -2,10 +2,117 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 
 enum direction
 {
     horiz, verti
+}
+
+public unsafe class Memory
+{
+    // Handle for the process heap. This handle is used in all calls to the
+    // HeapXXX APIs in the methods below.
+    static int ph = GetProcessHeap();
+    // Private instance constructor to prevent instantiation.
+    private Memory() { }
+    // Allocates a memory block of the given size. The allocated memory is
+    // automatically initialized to zero.
+    public static void* Alloc(int size)
+    {
+        void* result = HeapAlloc(ph, HEAP_ZERO_MEMORY, size);
+        if (result == null) throw new OutOfMemoryException();
+        return result;
+    }
+    // Copies count bytes from src to dst. The source and destination
+    // blocks are permitted to overlap.
+    public static void Copy(void* src, void* dst, int count)
+    {
+        byte* ps = (byte*)src;
+        byte* pd = (byte*)dst;
+        if (ps > pd)
+        {
+            for (; count != 0; count--) *pd++ = *ps++;
+        }
+        else if (ps < pd)
+        {
+            for (ps += count, pd += count; count != 0; count--) *--pd = *--ps;
+        }
+    }
+    // Frees a memory block.
+    public static void Free(void* block)
+    {
+        if (!HeapFree(ph, 0, block)) throw new InvalidOperationException();
+    }
+    // Re-allocates a memory block. If the reallocation request is for a
+    // larger size, the additional region of memory is automatically
+    // initialized to zero.
+    public static void* ReAlloc(void* block, int size)
+    {
+        void* result = HeapReAlloc(ph, HEAP_ZERO_MEMORY, block, size);
+        if (result == null) throw new OutOfMemoryException();
+        return result;
+    }
+    // Returns the size of a memory block.
+    public static int SizeOf(void* block)
+    {
+        int result = HeapSize(ph, 0, block);
+        if (result == -1) throw new InvalidOperationException();
+        return result;
+    }
+    // Heap API flags
+    const int HEAP_ZERO_MEMORY = 0x00000008;
+    // Heap API functions
+    [DllImport("kernel32")]
+    static extern int GetProcessHeap();
+    [DllImport("kernel32")]
+    static extern void* HeapAlloc(int hHeap, int flags, int size);
+    [DllImport("kernel32")]
+    static extern bool HeapFree(int hHeap, int flags, void* block);
+    [DllImport("kernel32")]
+    static extern void* HeapReAlloc(int hHeap, int flags,
+       void* block, int size);
+    [DllImport("kernel32")]
+    static extern int HeapSize(int hHeap, int flags, void* block);
+}
+unsafe class bytesprocs
+{
+    public static bool is_equal(byte* dst, byte* src, int len)
+    {
+        for (; len != 0; len--)
+        {
+            if ((*src) != (*dst)) return false;
+            src++;
+            dst++;
+        }
+        return true;
+    }
+
+    public static void bytescopy(byte* dst, byte* src, int len)
+    {
+        for (; len != 0; len--)
+        {
+            (*dst) = (*src);
+            src++;
+            dst++;
+        }
+    }
+    public static bool has_pattern(byte* memo, byte* pattern, int lenpattern, int len)
+    {
+        for (; len != 0; len--)
+        {
+            if (bytesprocs.is_equal(memo, pattern, lenpattern)) return true;
+            memo += lenpattern;
+        }
+        return false;
+    }
+
+    public static void push_pattern(byte* memo, byte* pattern, int lenpattern, int len)
+    {
+        memo += len * lenpattern;
+        bytescopy(memo, pattern, lenpattern);
+    }
+
 }
 
 class piece
@@ -100,8 +207,69 @@ class zonep : piece
         return false;
     }
 }
+
+unsafe class tracedata
+{
+    const int HUGELENTRACE = 400000;
+    const int LENMAXHASH = 32;
+    int poivechash;
+    byte* arrhash;
+    public int poitracehash = 0;
+    byte* tracehash;
+
+    public tracedata()
+    {
+        arrhash = (byte*)Memory.Alloc(LENMAXHASH);
+        tracehash = (byte*)Memory.Alloc(HUGELENTRACE * LENMAXHASH);
+    }
+    ~tracedata()
+    {
+        Memory.Free(arrhash);
+        Memory.Free(tracehash);
+    }
+
+    public void push_hash()
+    {
+        bytesprocs.push_pattern(tracehash, arrhash, LENMAXHASH, poitracehash);
+        poitracehash++;
+        if (poitracehash == HUGELENTRACE)
+            throw new Exception("stack overflow huge trace");
+    }
+
+    public bool pos_hash_in_trace()
+    {
+        return bytesprocs.has_pattern(tracehash, arrhash, LENMAXHASH, poitracehash);
+    }
+
+    public void push_byte_hash(byte b)
+    {
+        *(arrhash + poivechash++) = b;
+        //arrhash[poivechash] = b;
+        //poivechash++;
+        //if (poivechash == LENMAXHASH)
+        //    throw new Exception("stack overflow hash");
+    }
+
+    public void makehash(int poistack_state, int lennexts, int[] lposx, int[] lposy)
+    {
+        byte c;
+        int i;
+        poivechash = 0;
+        byte bpoistack_state = (byte)poistack_state;
+        push_byte_hash(bpoistack_state);
+        for (i = 0; i < lennexts; i++)
+        {
+            c = (byte)lposx[i];
+            push_byte_hash(c);
+            c = (byte)lposy[i];
+            push_byte_hash(c);
+        }
+    }
+}
+
 class unblmedata
 {
+    tracedata trace = new tracedata();
     static void getenterzonea(piece piec, int sx, int sy, int move, out zonep zone)
     {
         direction dire = piec.dire;
@@ -358,25 +526,13 @@ class unblmedata
     zonep[] stackzonela;
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
-    int[] vecglued;
-    ////////////////////////////////////////////////////
     public int MAXDEPTH = 0;
-    public int LENPURP = 0;
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
     public DateTime startime;
     public int countmoves;
-    public long countindeps;
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
-    public enum strategycycles
-    {
-        none,
-        weak,
-        medium,
-        strong
-    }
-    public strategycycles strategy;
     int maxdata()
     {
         int i, j;
@@ -414,8 +570,6 @@ class unblmedata
         stackzoneea = new zonep[lenstack];
         stackzonel = new zonep[lenstack];
         stackzonela = new zonep[lenstack];
-
-        vecglued = new int[lenstack];
     }
 
     void alloc_lists()
@@ -684,7 +838,6 @@ class unblmedata
         TimeSpan difftime = endetime - startime;
         Console.WriteLine("Run Time {0}", difftime);
         Console.WriteLine("recursion called {0} times", countmoves);
-        Console.WriteLine("is_indep called {0} times.", countindeps);
     }
 
     ////////////////////////////////////////////////////
@@ -786,7 +939,6 @@ class unblmedata
 
     bool is_indep(int i, int j)
     {
-        countindeps++;
         if (stackzoneea[i].overlaps(stackzonel[j])) return false;
         if (stackzoneea[j].overlaps(stackzonel[i])) return false;
         if (stackzonee[i].overlaps(stackzonela[j])) return false;
@@ -802,168 +954,6 @@ class unblmedata
         return false;
     }
 
-    int FirstNIndepDown()
-    {
-        int i;
-        for (i = poistack_state - 2; i >= 0; i--)
-            if (!is_indep(i, poistack_state - 1))
-                return i;
-        return -1;
-    }
-
-    bool IsFirstTime()
-    {
-        if (poistack_moves < 2) return true;
-        int val = stackpieces[poistack_moves - 1];
-        int posvaldown = first_val(val);
-        return posvaldown == -1;
-    }
-
-    void MakeGluedDown(int pos)
-    {
-        int i;
-        int crtpos = 0;
-        if (pos == 0) return;
-        vecglued[pos - 1] = crtpos;
-        for (i = pos - 2; i >= 0; i--)
-        {
-            if (is_indep(i, i + 1))
-                crtpos++;
-            vecglued[i] = crtpos;
-        }
-    }
-
-    bool GlueIndep(int pos, int g1)
-    {
-        int i;
-        for (i = 0; i < poistack_state; i++)
-            if (vecglued[i] == g1)
-            {
-                if (!is_indep(pos, i))
-                    return false;
-            }
-        return true;
-    }
-
-    bool TwoGluedIndep(int g1, int g2)
-    {
-        int i;
-        for (i = 0; i < poistack_state; i++)
-            if (vecglued[i] == g1)
-            {
-                if (!GlueIndep(i, g2))
-                    return false;
-            }
-            else
-                continue;
-        return true;
-    }
-
-    void PrintGlue(int g)
-    {
-        int i;
-        for (i = 0; i < poistack_state; i++)
-            if (vecglued[i] == g)
-                Console.Write("{0} ", i);
-            else
-                continue;
-        Console.WriteLine();
-    }
-
-    int GetValPosGlue(int g, int pos)
-    {
-        int i;
-        int poi = -1;
-        for (i = 0; i < poistack_state; i++)
-            if (vecglued[i] == g)
-            {
-                poi++;
-                if (poi == pos)
-                    return i;
-            }
-            else
-                continue;
-        return -1;
-    }
-
-    int GetMaxGlue()
-    {
-        int i;
-        int max = -1;
-        for (i = 0; i < poistack_state; i++)
-            if (vecglued[i] > max)
-                max = vecglued[i];
-        return max;
-    }
-
-    bool TwoGluedMMic1(int g1, int g2)
-    {
-        int p1;
-        int p2;
-        p1 = GetValPosGlue(g1, 0);
-        p2 = GetValPosGlue(g2, 0);
-        return stackpieces[p1] < stackpieces[p2];
-        int poi = 0;
-        while (true)
-        {
-            p1 = GetValPosGlue(g1, poi);
-            p2 = GetValPosGlue(g2, poi);
-            if (p1 == -1 || p2 == -1) return false;
-            if (stackpieces[p1] > stackpieces[p2]) return false;
-            poi++;
-        }
-    }
-
-    bool TwoGluedMMic(int g1, int g2)
-    {
-        int p1;
-        p1 = GetValPosGlue(g1, 0);
-        return ExistsOneMMic(g2, p1);
-    }
-
-    bool TwoGluedMMic2(int g1, int g2)
-    {
-        int i;
-        for (i = 0; i < poistack_state; i++)
-        {
-            if (vecglued[i] == g1)
-                if (ExistsOneMMic(g2, i))
-                    return true;
-        }
-        return false;
-    }
-
-    bool ExistsOneMMic(int g, int pos)
-    {
-        int i;
-        for (i = 0; i < poistack_state; i++)
-            if (vecglued[i] == g)
-            {
-                if (stackpieces[i] > stackpieces[pos]) return true;
-            }
-        return false;
-    }
-
-
-    bool is_glue_nordered()
-    {
-        bool ret;
-        if (poistack_moves < 2) return false;
-        if (GetMaxGlue() < 1) return false;
-
-        if (TwoGluedIndep(0, 1))
-        {
-            ret = TwoGluedMMic(0, 1);
-            if (ret)
-                return true;
-            else
-                return false;
-        }
-
-        return false;
-    }
-
-
     bool moving_cycles()
     {
         bool foundl = false;
@@ -978,15 +968,9 @@ class unblmedata
         for (i = posvaldown + 1; i < poistack_moves - 1; i++)
         {
             if (stackzonela[posvaldown].overlaps(stackzonee[i]) || stackzonel[posvaldown].overlaps(stackzoneea[i]))
-            //if (!is_indep(posvaldown, i))
-            {
                 foundl = true;
-            }
             if (stackzoneea[poistack_moves - 1].overlaps(stackzonel[i]) || stackzonee[poistack_moves - 1].overlaps(stackzonela[i]))
-            //if (!is_indep(poistack_moves - 1, i))
-            {
                 founde = true;
-            }
         }
         if (!foundl) return true;
         if (!founde) return true;
@@ -995,317 +979,13 @@ class unblmedata
 
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
-    void test_case_step(int i, int j)
-    {
-        push_state();
-        push_move(i, j);
-        move_ind(i, j);
-        Console.WriteLine();
-        Console.WriteLine("{0} :", poistack_state);
-        print_data(lposx, lposy);
-        if (data_exists_before())
-            Console.WriteLine("BEFORE !!!");
-        if (!was_good_move())
-            Console.WriteLine("NOT GOOD !!!");
-        if (is_final())
-            Console.WriteLine("FINAL !!!");
-    }
-
-    ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////
-    public void test_case003()
-    {
-        test_case_step(4, 1);
-        test_case_step(7, -1);
-        test_case_step(9, 1);
-        test_case_step(1, 2);
-        test_case_step(3, 1);
-        test_case_step(6, -2);
-        test_case_step(7, -1);
-        test_case_step(8, -1);
-        test_case_step(10, 3);
-        test_case_step(8, 1);
-        test_case_step(7, 1);
-        test_case_step(6, 3);
-        test_case_step(3, -1);
-        test_case_step(1, -1);
-        test_case_step(4, -1);
-        test_case_step(7, -1);
-        test_case_step(8, -2);
-        test_case_step(9, -3);
-        test_case_step(10, -2);
-        test_case_step(1, 2);
-        test_case_step(5, 2);
-        test_case_step(2, 2);
-        test_case_step(0, 3);
-        test_case_step(3, 3);
-        test_case_step(8, -2);
-        test_case_step(4, 1);
-        test_case_step(7, 1);
-        test_case_step(6, -4);
-        test_case_step(4, -1);
-        test_case_step(7, -1);
-        test_case_step(9, -1);
-        test_case_step(8, 4);
-        test_case_step(0, -1);
-        test_case_step(3, -2);
-        test_case_step(2, -2);
-
-        Console.ReadKey();
-    }
-    public void test_case006()
-    {
-        test_case_step(2, 1);
-        test_case_step(11, 1);
-        test_case_step(3, 2);
-        test_case_step(4, -1);
-        test_case_step(5, -1);
-        test_case_step(7, -2);
-        test_case_step(9, -2);
-        test_case_step(6, 1);
-        test_case_step(1, 1);
-        test_case_step(0, 3);
-        test_case_step(7, -1);
-        test_case_step(5, 1);
-        test_case_step(3, -1);
-        test_case_step(11, -1);
-        test_case_step(6, 1);
-        test_case_step(8, -3);
-        test_case_step(10, -3);
-        test_case_step(8, 3);
-        test_case_step(6, -1);
-        test_case_step(11, 1);
-        test_case_step(3, 1);
-        test_case_step(5, -1);
-        test_case_step(7, 1);
-        test_case_step(0, -3);
-        test_case_step(1, -1);
-        test_case_step(2, -1);
-        test_case_step(6, -1);
-        test_case_step(9, 3);
-        test_case_step(6, 1);
-        test_case_step(7, 2);
-        test_case_step(10, -1);
-        Console.ReadKey();
-    }
-
-    public void test_case007c()
-    {
-        test_case_step(5, 1);
-        test_case_step(7, -3);
-        test_case_step(8, -1);
-        test_case_step(9, -1);
-        test_case_step(11, 1);
-        test_case_step(3, 3);
-        test_case_step(4, -2);
-        test_case_step(5, 1);
-        test_case_step(0, 1);
-        test_case_step(8, 1);
-        test_case_step(7, 1);
-        test_case_step(1, -2);
-        test_case_step(2, -2);
-        test_case_step(6, -2);
-        test_case_step(8, 1);
-        test_case_step(0, 3);
-        test_case_step(4, -1);
-        test_case_step(5, -1);
-        test_case_step(8, -1);
-        test_case_step(6, 1);
-        test_case_step(2, 1);
-        test_case_step(1, 1);
-        test_case_step(7, -1);
-        test_case_step(8, -1);
-        test_case_step(3, -3);
-        test_case_step(8, 1);
-        test_case_step(7, 3);
-        test_case_step(1, -1);
-        test_case_step(2, -1);
-        test_case_step(4, -1);
-        test_case_step(5, -1);
-        test_case_step(6, -1);
-        test_case_step(9, -2);
-        test_case_step(8, 2);
-        test_case_step(10, -3);
-        test_case_step(8, -2);
-        test_case_step(11, -2);
-        test_case_step(6, 3);
-        test_case_step(9, 3);
-        test_case_step(2, 2);
-        test_case_step(3, -1);
-        test_case_step(10, -1);
-        Console.ReadKey();
-    }
-    public void test_case011()
-    {
-        test_case_step(2, -1);
-        test_case_step(3, -1);
-        test_case_step(6, 1);
-        test_case_step(7, 1);
-        test_case_step(9, -2);
-        test_case_step(8, 3);
-        test_case_step(5, 2);
-        test_case_step(9, 2);
-        test_case_step(7, -4);
-        test_case_step(5, -2);
-        test_case_step(9, -2);
-        test_case_step(8, -3);
-        test_case_step(0, 3);
-        test_case_step(3, 3);
-        test_case_step(9, 2);
-        test_case_step(2, 2);
-        test_case_step(1, 3);
-        test_case_step(5, -2);
-        test_case_step(4, 1);
-        test_case_step(7, 1);
-        test_case_step(6, -4);
-        test_case_step(4, -1);
-        test_case_step(7, -1);
-        test_case_step(8, -1);
-        test_case_step(5, 4);
-        test_case_step(4, 1);
-        test_case_step(7, 1);
-        test_case_step(6, 2);
-        test_case_step(1, -3);
-        test_case_step(2, -2);
-        Console.ReadKey();
-    }
-
-    public void test_case018()
-    {
-        test_case_step(1, 1);
-        test_case_step(0, 3);
-        test_case_step(2, -1);
-        test_case_step(4, 1);
-        test_case_step(6, -3);
-        test_case_step(7, -1);
-        test_case_step(1, 1);
-        test_case_step(3, -1);
-        test_case_step(5, -1);
-        test_case_step(8, -1);
-        test_case_step(9, 1);
-        test_case_step(10, -1);
-        test_case_step(11, 1);
-        test_case_step(1, 2);
-        test_case_step(4, 2);
-        test_case_step(2, 1);
-        test_case_step(0, -2);
-        test_case_step(5, -1);
-        test_case_step(7, 3);
-        test_case_step(2, 3);
-        test_case_step(3, -2);
-        test_case_step(4, -2);
-        test_case_step(7, -3);
-        test_case_step(1, -3);
-        test_case_step(7, 1);
-        test_case_step(6, 1);
-        test_case_step(0, -1);
-        test_case_step(1, -1);
-        test_case_step(9, -1);
-        test_case_step(11, -1);
-        test_case_step(5, 3);
-        Console.ReadKey();
-    }
-    public void test_case391m()
-    {
-        test_case_step(4, -1);
-        test_case_step(7, -1);
-        test_case_step(9, -1);
-        test_case_step(11, 3);
-        test_case_step(6, 2);
-        test_case_step(5, 1);
-        test_case_step(8, 1);
-        test_case_step(0, 4);
-        test_case_step(1, -1);
-        test_case_step(5, -1);
-        test_case_step(7, -1);
-        test_case_step(8, -1);
-        test_case_step(6, -2);
-        test_case_step(9, -1);
-        test_case_step(10, -3);
-        test_case_step(2, 3);
-        test_case_step(3, 3);
-        test_case_step(11, -2);
-        test_case_step(9, 2);
-        test_case_step(7, 2);
-        test_case_step(1, 3);
-        test_case_step(4, 3);
-        test_case_step(6, -2);
-        test_case_step(5, 1);
-        test_case_step(8, 1);
-        test_case_step(0, -4);
-        test_case_step(5, -1);
-        test_case_step(8, -1);
-        test_case_step(10, -1);
-        test_case_step(6, 3);
-        test_case_step(5, 1);
-        test_case_step(0, 1);
-        test_case_step(1, -3);
-        test_case_step(7, -2);
-        Console.ReadKey();
-    }
-
-    public void test_case399()
-    {
-        test_case_step(2, -1);
-        test_case_step(4, 1);
-        test_case_step(6, 1);
-        test_case_step(8, -4);
-        test_case_step(4, -1);
-        test_case_step(6, -1);
-        test_case_step(2, 2);
-        test_case_step(9, -1);
-        test_case_step(5, 1);
-        test_case_step(0, 1);
-        test_case_step(1, -3);
-        test_case_step(0, -1);
-        test_case_step(3, -1);
-        test_case_step(5, -1);
-        test_case_step(7, -1);
-        test_case_step(9, 3);
-        test_case_step(10, 2);
-        test_case_step(2, 2);
-        test_case_step(4, 1);
-        test_case_step(6, 1);
-        test_case_step(8, 4);
-        test_case_step(1, -1);
-        test_case_step(4, -1);
-        test_case_step(6, -1);
-        test_case_step(2, -4);
-        test_case_step(4, 1);
-        test_case_step(6, 1);
-        test_case_step(8, -3);
-        test_case_step(9, -3);
-        test_case_step(5, 1);
-        test_case_step(7, 1);
-    }
-
-    public void test_casetest()
-    {
-        bool test;
-        test_case_step(0, 3);
-        test_case_step(1, -3);
-        test = stackzoneea[1].overlaps(stackzonel[0]) ||
-        stackzonee[1].overlaps(stackzonela[0]);
-        test = stackzonela[0].overlaps(stackzonee[1]) ||
-   stackzonel[0].overlaps(stackzoneea[1]);
-
-        test = is_indep(1, 0);
-    }
-
-    ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////
     bool was_good_move()
     {
         if (moving_cycles()) return false;
         if (is_nordered()) return false;
-
-        //if (IsFirstTime()) return true;
-        MakeGluedDown(poistack_state);
-        if (is_glue_nordered())
-            //{
-            //    Console.WriteLine("is_glue_nordered"); print_stack(); PrintGlue(1); PrintGlue(0); Console.WriteLine("end is_glue_nordered"); Console.ReadKey();
-            return false;
-        //}
+        trace.makehash(poistack_moves, lennexts, lposx, lposy);
+        if (trace.pos_hash_in_trace()) return false;
+        trace.push_hash();
         return true;
     }
 
@@ -1337,10 +1017,6 @@ class unblmedata
     }
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
-    bool is_final_old()
-    {
-        return lpiece[colorexit - 1].is_in_piece(lposx[colorexit - 1], lposy[colorexit - 1], exitx, exity);
-    }
 
     bool is_final()
     {
@@ -1415,38 +1091,10 @@ class unblmedata
         }
         if (MAXDEPTH != 0)
             if (poistack_state == MAXDEPTH)
-            {
-                //makehash();
-                //push_hash_eventually_update();
-
-                return;//some limitation
-            }
+                return;
         stack_make_nexts_and_make_moves();
     }
 
-    public void recursion1()
-    {
-        int i, j;
-        if (is_final()) { push_state(); print_stack(); repkeys(); Environment.Exit(0); }
-        if (MAXDEPTH != 0)
-            if (poistack_state == MAXDEPTH) return;//some limitation
-        push_nexts();
-        make_nexts();
-        for (i = 0; i < lennexts; i++)
-            for (j = nexts[2 * i]; j <= nexts[2 * i + 1]; j++)
-                if (is_good_move(i, j))
-                {
-                    push_state();
-                    push_move(i, j);
-                    move_ind(i, j);
-                    if (!data_exists_before())
-                        if (was_good_move())
-                            recursion1();
-                    pop_move();
-                    pop_state();
-                }
-        pop_nexts();
-    }
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
     static bool IsLetter(byte b)
@@ -1531,12 +1179,44 @@ class unblmedata
         ret.alloc_nexts();
         ret.alloc_lists();
         ret.calctypes();
+
         ret.colorexit = arrbytes[2 + ret.lenx * ret.leny] - 'A' + 1;
         ret.exitx = arrbytes[2 + ret.lenx * ret.leny + 1] - '0';
         ret.exity = arrbytes[2 + ret.lenx * ret.leny + 2] - '0';
         return ret;
     }
+
+    void copy_vec_bytes(byte[] dest, byte[] src)
+    {
+        int i;
+        int len = 2 * lennexts + 1;
+        for (i = 0; i < len; i++)
+            dest[i] = src[i];
+    }
+
+    bool equal_vec_bytes(byte[] dest, byte[] src)
+    {
+        int i;
+        int len = 2 * lennexts + 1;
+        for (i = 0; i < len; i++)
+            if (dest[i] != src[i]) return false;
+        return true;
+    }
+
+
+    void print_bytes(byte[] arrbytes)
+    {
+        int len;
+        int i;
+        len = arrbytes.Length;
+        for (i = 0; i < len; i++)
+        {
+            Console.Write("{0} ", arrbytes[i]);
+        }
+        Console.WriteLine();
+    }
 }
+
 
 class unblme
 {
@@ -1544,8 +1224,6 @@ class unblme
     {
         String namefile = null;
         String strmaxrec = "50";
-        String strmaxpurp = "0";
-        String strstrategy = "none";
         int i;
         int len;
         String arg;
@@ -1561,47 +1239,22 @@ class unblme
             { namefile = arg; continue; }
             if (optarg == "-d")
             { strmaxrec = arg; continue; }
-            if (optarg == "-l")
-            { strmaxpurp = arg; continue; }
-            if (optarg == "-s")
-            { strstrategy = arg; continue; }
         }
         unblmedata vunblmedata = unblmedata.GetUnblMeData(namefile);
         vunblmedata.MAXDEPTH = Int32.Parse(strmaxrec);
-        vunblmedata.LENPURP = Int32.Parse(strmaxpurp);
-        if (strstrategy == "none")
-            vunblmedata.strategy = unblmedata.strategycycles.none;
-        if (strstrategy == "weak")
-            vunblmedata.strategy = unblmedata.strategycycles.weak;
-        if (strstrategy == "medium")
-            vunblmedata.strategy = unblmedata.strategycycles.medium;
-        if (strstrategy == "strong")
-            vunblmedata.strategy = unblmedata.strategycycles.strong;
+
         Console.WriteLine("MAXDEPTH={0}", vunblmedata.MAXDEPTH);
-        Console.WriteLine("LENPURP={0}", vunblmedata.LENPURP);
-        Console.WriteLine("strategy={0}", vunblmedata.strategy);
 
         Console.WriteLine("initial");
-        //unblmedata.testoverlaps(); Console.ReadKey(); return;
         vunblmedata.print_data(vunblmedata.lposx, vunblmedata.lposy);
         Console.WriteLine("starting computing...");
         vunblmedata.startime = DateTime.Now;
         vunblmedata.countmoves = 0;
-        vunblmedata.countindeps = 0;
-        //vunblmedata.test_case003();
-        //vunblmedata.test_case006();
-        //vunblmedata.test_case007c();
-        //vunblmedata.test_case011();
-        //vunblmedata.test_case018();
-        //vunblmedata.test_case391m();
-        //vunblmedata.test_case399();
-        //vunblmedata.test_casetest();
-
         vunblmedata.recursion();
 
         Console.WriteLine("No sol. found. press a key...");
         Console.WriteLine("{0} moves.", vunblmedata.countmoves);
-        Console.WriteLine("is_indep called {0} times.", vunblmedata.countindeps);
+        //Console.WriteLine("is_indep called {0} times.", vunblmedata.countindeps);
         Console.ReadKey();
     }
 }
