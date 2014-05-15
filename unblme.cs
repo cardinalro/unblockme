@@ -968,13 +968,11 @@ class unblmedata
         for (i = posvaldown + 1; i < poistack_moves - 1; i++)
         {
             if (stackzonela[posvaldown].overlaps(stackzonee[i]) || stackzonel[posvaldown].overlaps(stackzoneea[i]))
-                foundl = true;
+            { foundl = true; if (founde)return false; }
             if (stackzoneea[poistack_moves - 1].overlaps(stackzonel[i]) || stackzonee[poistack_moves - 1].overlaps(stackzonela[i]))
-                founde = true;
+            { founde = true; if (foundl)return false; }
         }
-        if (!foundl) return true;
-        if (!founde) return true;
-        return false;
+        return true;
     }
 
     ////////////////////////////////////////////////////
