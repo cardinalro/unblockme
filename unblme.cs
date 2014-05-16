@@ -9,13 +9,16 @@ enum direction
     horiz, verti
 }
 
-public unsafe class Memory
+unsafe static class Memory
 {
     // Handle for the process heap. This handle is used in all calls to the
     // HeapXXX APIs in the methods below.
-    static int ph = GetProcessHeap();
+    static int ph;
     // Private instance constructor to prevent instantiation.
-    private Memory() { }
+    static Memory()
+    {
+        ph = GetProcessHeap();
+    }
     // Allocates a memory block of the given size. The allocated memory is
     // automatically initialized to zero.
     public static void* Alloc(int size)
@@ -75,7 +78,7 @@ public unsafe class Memory
     [DllImport("kernel32")]
     static extern int HeapSize(int hHeap, int flags, void* block);
 }
-unsafe class bytesprocs
+unsafe static class bytesprocs
 {
     public static bool is_equal(byte* dst, byte* src, int len)
     {
