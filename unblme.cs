@@ -215,15 +215,15 @@ unsafe class tracedata
 {
     const int HUGELENTRACE = 400000;
     const int LENMAXHASH = 32;
-    int poivechash;
-    byte* arrhash;
     public int poitracehash = 0;
     byte* tracehash;
+    int poivechash;
+    byte* arrhash;
 
     public tracedata()
     {
-        arrhash = (byte*)Memory.Alloc(LENMAXHASH);
         tracehash = (byte*)Memory.Alloc(HUGELENTRACE * LENMAXHASH);
+        arrhash = (byte*)Memory.Alloc(LENMAXHASH);
     }
     ~tracedata()
     {
@@ -253,13 +253,13 @@ unsafe class tracedata
         //    throw new Exception("stack overflow hash");
     }
 
-    public void makehash(int poistack_state, int lennexts, int[] lposx, int[] lposy)
+    public void makehash(int poistack_moves, int lennexts, int[] lposx, int[] lposy)
     {
         byte c;
         int i;
         poivechash = 0;
-        byte bpoistack_state = (byte)poistack_state;
-        push_byte_hash(bpoistack_state);
+        byte bpoi = (byte)poistack_moves;
+        push_byte_hash(bpoi);
         for (i = 0; i < lennexts; i++)
         {
             c = (byte)lposx[i];
@@ -272,7 +272,7 @@ unsafe class tracedata
 
 class unblmedata
 {
-    tracedata trace = new tracedata();
+    public tracedata trace = new tracedata();
     static void getenterzonea(piece piec, int sx, int sy, int move, out zonep zone)
     {
         direction dire = piec.dire;
