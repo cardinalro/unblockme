@@ -1,97 +1,111 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title>Untitled Page</title>
 </head>
 <body>
-<div style="text-align:center;font-weight: bold;">The Cat</div>
-<br />
-Like many programmers, when I see a puzzle, I cannot help thinking "Can I devise an algorithm to solve that" ?
-<br />
-It is probably the same urge, that drives a cat crazy, when it sees something dangling, to play with it :)
-<br />
-Then I saw the Unblock Me puzzle, you can read about it here, and many have it on their Android phone.
-<br />
-Immediately, I started thinking about how to solve that game, too.
-<br />
-Of course, in a couple of days I managed to write a program, using a depth first search. I did the recursion, the backtracking, I kept a trace of values, like a Stack.
-<br />
-But when I ran it, it kept running, and running... and running...
-<br />
-It seemed that the space for searching was something big, almost like the central supermassive black hole of the galaxy :(
-<br />
-<br />
-<div style="text-align:center;font-weight: bold;">The Prune</div>
-<br />
-So, i decided i need some imaginative pruning. That is, to eliminate some of the branches of that awful tree.
-<br />
-What came to my mind ?
-When a piece moves, it enters (cover)a new zone, and leaves (uncover)an old zone.
-<br />
-These zones are, like a piece, the have a length, an orientation, and a position on the table. I thought these might be useful.
-<br />
-<img src="images/zones80.png"/>
-
-<br />
-<div style="text-align:center;font-weight: bold;">The decision functions for pruning</div>
-<div style="text-align:center;">(some horror code will follow)</div>
-<br />
-These functions decide whether I will continue to search from a node, or not.
-Of course, I played with some functions, but two remained.
-<br />
-One says that
-<br />
-"For a move to be valid, it needs to be historically purposeful"
-<br />
-Good use was made for these zones I talked about.
-So, this function, validates a move if some moves before( remember I keep track of moves) uncover a zone that is covered by this move(the one being tested).
-<br />
-<img src="images/nopurpose.png"/>
-<br />
-<br />
-Another function, tests whether
-
-"between the current move and an older one of the same piece, are some moves that helps me to do these 2 moves ?"
-<br />
-So, if between current move, and an older move of the same piece, the pieces are moving unpurposefully(similar to the previous function) the move is invalid.
-
-The idea is that, between the moves of the same piece, one must cover the uncovered zone of the oldest move, and another must leave a zone for the newest move to cover.
-<br />
-And also, the move that covers must be older that the one that uncovers.
-<br />
-<img src="images/cycles.png"/>
-<br />
-zonel means "zone left"
-<br />
-zonee means "zone entered"
-<br />
-The depth first is a simple recursion:
-<br />
-<img src="images/recursion.png"/>
-<br />
-the function <b>aftermove</b> calls itself, through some other functions, and saves states in a stack, along the way.
-
-<div style="text-align:center;font-weight: bold;">Happy end</div>
-
-So, i ran the program, and voila ! It solves all the puzzles that I thrown at it.
-<br />
-Examples :
-<a href="out643f.txt">643</a>
-<a href="out743f.txt">743</a>
-<a href="out750f.txt">750</a>
-puzzles
-<br />
-The source code is a plain vanilla C# named <a href="unblme.cs">unblme.CS</a>, can be compiled with any .NET Framework's CSC (use <b>/unsafe</b> option)
-<br />
-The command line to run this executable is
-<br />
-<div style="text-align:center;font-weight: bold;">
-unblme file.txt
-</div>
-<br />
-where the input file is like this <a href="in750.txt">in750.txt</a>
-<br />
-<div style="text-align:center;font-weight: bold;">Enjoy!</div>
+    <div style="text-align: center; font-weight: bold;">
+        The Cat</div>
+    <br />
+    Like many programmers, when I see a puzzle, I cannot help thinking "Can I devise
+    an algorithm to solve that" ?
+    <br />
+    It is probably the same urge, that drives a cat crazy, when it sees something dangling,
+    to play with it :)
+    <br />
+    Then I saw the Unblock Me puzzle, you can read about it here, and many have it on
+    their Android phone.
+    <br />
+    Immediately, I started thinking about how to solve that game, too.
+    <br />
+    Of course, in a couple of days I managed to write a program, using a depth first
+    search. I did the recursion, the backtracking, I kept a trace of values, like a
+    Stack.
+    <br />
+    But when I ran it, it kept running, and running... and running...
+    <br />
+    It seemed that the space for searching was something big, almost like the central
+    supermassive black hole of the galaxy :(
+    <br />
+    <br />
+    <div style="text-align: center; font-weight: bold;">
+        The Prune</div>
+    <br />
+    So, i decided i need some imaginative pruning. That is, to eliminate some of the
+    branches of that awful tree.
+    <br />
+    What came to my mind ? When a piece moves, it enters (cover)a new zone, and leaves
+    (uncover)an old zone.
+    <br />
+    These zones are, like a piece, the have a length, an orientation, and a position
+    on the table. I thought these might be useful.
+    <br />
+    <img src="images/zones80.png" />
+    <br />
+    <div style="text-align: center; font-weight: bold;">
+        The decision functions for pruning</div>
+    <div style="text-align: center;">
+        (some horror code will follow)</div>
+    <br />
+    These functions decide whether I will continue to search from a node, or not. Of
+    course, I played with some functions, but two remained.
+    <br />
+    One says that
+    <br />
+    "For a move to be valid, it needs to be historically purposeful"
+    <br />
+    Good use was made for these zones I talked about. So, this function, validates a
+    move if some moves before( remember I keep track of moves) uncover a zone that is
+    covered by this move(the one being tested).
+    <br />
+    <img src="images/nopurpose.png" />
+    <br />
+    <br />
+    Another function, tests whether "between the current move and an older one of the
+    same piece, are some moves that helps me to do these 2 moves ?"
+    <br />
+    So, if between current move, and an older move of the same piece, the pieces are
+    moving unpurposefully(similar to the previous function) the move is invalid. The
+    idea is that, between the moves of the same piece, one must cover the uncovered
+    zone of the oldest move, and another must leave a zone for the newest move to cover.
+    <br />
+    And also, the move that covers must be older that the one that uncovers.
+    <br />
+    <img src="images/cycles.png" />
+    <br />
+    zonel means "zone left"
+    <br />
+    zonee means "zone entered"
+    <br />
+    The depth first is a simple recursion:
+    <br />
+    <img src="images/recursion.png" />
+    <br />
+    the function <b>aftermove</b> calls itself, through some other functions, and saves
+    states in a stack, along the way. The algorithm repeats itself, starting with a
+    depth of 1, and increasing this depth every time, effectively rendering it a
+    <div style="text-align: center; font-weight: bold;">
+        Iterative deepening depth-first search</div>
+    algorithm.
+    <div style="text-align: center; font-weight: bold;">
+        Happy end</div>
+    So, i ran the program, and voila ! It solves all the puzzles that I thrown at it.
+    <br />
+    Examples : <a href="out643f.txt">643</a> <a href="out743f.txt">743</a> <a href="out750f.txt">
+        750</a> puzzles
+    <br />
+    The source code is a plain vanilla C# named <a href="unblme.cs">unblme.CS</a>, can
+    be compiled with any .NET Framework's CSC (use <b>/unsafe</b> option)
+    <br />
+    The command line to run this executable is
+    <br />
+    <div style="text-align: center; font-weight: bold;">
+        unblme file.txt
+    </div>
+    <br />
+    where the input file is like this <a href="in750.txt">in750.txt</a>
+    <br />
+    <div style="text-align: center; font-weight: bold;">
+        Enjoy!</div>
 </body>
 </html>
