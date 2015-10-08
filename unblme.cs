@@ -9,75 +9,6 @@ enum direction
     horiz, verti
 }
 
-unsafe static class Memory
-{
-    // Handle for the process heap. This handle is used in all calls to the
-    // HeapXXX APIs in the methods below.
-    static int ph;
-    // Private instance constructor to prevent instantiation.
-    static Memory()
-    {
-        ph = GetProcessHeap();
-    }
-    // Allocates a memory block of the given size. The allocated memory is
-    // automatically initialized to zero.
-    public static void* Alloc(int size)
-    {
-        void* result = HeapAlloc(ph, HEAP_ZERO_MEMORY, size);
-        if (result == null) throw new OutOfMemoryException();
-        return result;
-    }
-    // Copies count bytes from src to dst. The source and destination
-    // blocks are permitted to overlap.
-    public static void Copy(void* src, void* dst, int count)
-    {
-        byte* ps = (byte*)src;
-        byte* pd = (byte*)dst;
-        if (ps > pd)
-        {
-            for (; count != 0; count--) *pd++ = *ps++;
-        }
-        else if (ps < pd)
-        {
-            for (ps += count, pd += count; count != 0; count--) *--pd = *--ps;
-        }
-    }
-    // Frees a memory block.
-    public static void Free(void* block)
-    {
-        if (!HeapFree(ph, 0, block)) throw new InvalidOperationException();
-    }
-    // Re-allocates a memory block. If the reallocation request is for a
-    // larger size, the additional region of memory is automatically
-    // initialized to zero.
-    public static void* ReAlloc(void* block, int size)
-    {
-        void* result = HeapReAlloc(ph, HEAP_ZERO_MEMORY, block, size);
-        if (result == null) throw new OutOfMemoryException();
-        return result;
-    }
-    // Returns the size of a memory block.
-    public static int SizeOf(void* block)
-    {
-        int result = HeapSize(ph, 0, block);
-        if (result == -1) throw new InvalidOperationException();
-        return result;
-    }
-    // Heap API flags
-    const int HEAP_ZERO_MEMORY = 0x00000008;
-    // Heap API functions
-    [DllImport("kernel32")]
-    static extern int GetProcessHeap();
-    [DllImport("kernel32")]
-    static extern void* HeapAlloc(int hHeap, int flags, int size);
-    [DllImport("kernel32")]
-    static extern bool HeapFree(int hHeap, int flags, void* block);
-    [DllImport("kernel32")]
-    static extern void* HeapReAlloc(int hHeap, int flags,
-       void* block, int size);
-    [DllImport("kernel32")]
-    static extern int HeapSize(int hHeap, int flags, void* block);
-}
 unsafe static class bytesprocs
 {
     public static bool is_equal(byte* dst, byte* src, int len)
@@ -100,14 +31,14 @@ unsafe static class bytesprocs
             dst++;
         }
     }
-    public static bool has_pattern(byte* memo, byte* pattern, int lenpattern, int len)
+    public static int has_pattern(byte* memo, byte* pattern, int lenpattern, int len)
     {
-        for (; len != 0; len--)
+        for (int i = 0; i < len; i++)
         {
-            if (bytesprocs.is_equal(memo, pattern, lenpattern)) return true;
+            if (bytesprocs.is_equal(memo, pattern, lenpattern)) return i;
             memo += lenpattern;
         }
-        return false;
+        return -1;
     }
 
     public static void push_pattern(byte* memo, byte* pattern, int lenpattern, int len)
@@ -211,68 +142,126 @@ class zonep : piece
     }
 }
 
-unsafe class tracedata
+class unblmedata
 {
-    const int HUGELENTRACE = 400000;
-    const int LENMAXHASH = 32;
-    public int poitracehash = 0;
-    byte* tracehash;
+    #region hash
     int poivechash;
-    byte* arrhash;
+    public int poitracehash = 0;
+    const int HUGELENTRACE = 50000;
+    const int LENMAXHASH = 32;
 
-    public tracedata()
+    readonly static byte[] arrbytestracehash = new byte[HUGELENTRACE * LENMAXHASH];
+    readonly static byte[] arrbyteshash = new byte[LENMAXHASH];
+    int[] stack_poistack_moves = new int[HUGELENTRACE];
+    byte hash_bytes()
     {
-        tracehash = (byte*)Memory.Alloc(HUGELENTRACE * LENMAXHASH);
-        arrhash = (byte*)Memory.Alloc(LENMAXHASH);
-    }
-    ~tracedata()
-    {
-        Memory.Free(arrhash);
-        Memory.Free(tracehash);
+        int s;
+        int i;
+        int sum;
+        sum = poistack_moves;
+        for (i = 0; i < lennexts; i++)
+        {
+            s = lposx[i];
+            sum = sum ^ s + 1;
+            s = lposy[i];
+            sum = sum ^ s + 1;
+            //sum = ror(rol(sum) + s) + s;
+            //sum = (((sum >> 1) + s) << 1) + 1;
+        }
+        return (byte)sum;
     }
 
-    public void push_hash()
+    unsafe public void push_hash(byte* tracehash, byte* arrhash)
     {
-        bytesprocs.push_pattern(tracehash, arrhash, LENMAXHASH, poitracehash);
+        bytesprocs.push_pattern(tracehash, arrhash, poivechash, poitracehash);
         poitracehash++;
         if (poitracehash == HUGELENTRACE)
             throw new Exception("stack overflow huge trace");
     }
 
-    public bool pos_hash_in_trace()
+    unsafe public void makehash(byte* arrhash)
     {
-        return bytesprocs.has_pattern(tracehash, arrhash, LENMAXHASH, poitracehash);
-    }
-
-    public void push_byte_hash(byte b)
-    {
-        *(arrhash + poivechash++) = b;
-        //arrhash[poivechash] = b;
-        //poivechash++;
-        //if (poivechash == LENMAXHASH)
-        //    throw new Exception("stack overflow hash");
-    }
-
-    public void makehash(int poistack_moves, int lennexts, int[] lposx, int[] lposy)
-    {
-        byte c;
         int i;
         poivechash = 0;
-        byte bpoi = (byte)poistack_moves;
-        push_byte_hash(bpoi);
         for (i = 0; i < lennexts; i++)
         {
-            c = (byte)lposx[i];
-            push_byte_hash(c);
-            c = (byte)lposy[i];
-            push_byte_hash(c);
+            arrhash[poivechash] = (byte)lposx[i]; poivechash++;
+            arrhash[poivechash] = (byte)lposy[i]; poivechash++;
         }
     }
-}
 
-class unblmedata
-{
-    public tracedata trace = new tracedata();
+    unsafe bool was_already_hash_and_push(byte* tracehash, byte* arrhash)
+    {
+        makehash(arrhash);
+        int oldpos = bytesprocs.has_pattern(tracehash, arrhash, poivechash, poitracehash);
+        if (oldpos == -1)
+        {
+            push_hash(tracehash, arrhash);
+            stack_poistack_moves[poitracehash - 1] = poistack_moves;
+            return false;
+        }
+        int oldpoistack_moves = stack_poistack_moves[oldpos];
+        if (oldpoistack_moves <= poistack_moves) return true;
+        stack_poistack_moves[oldpos] = poistack_moves;
+        return false;
+    }
+    #endregion
+
+    int lenx;
+    int leny;
+    int[][] data;
+    int lennexts;
+    int[] nexts;
+    int[] types;
+    int lenstack;
+    int poistack_state;
+    int poistack_nexts;
+    int poistack_moves;
+
+    int[][] stacknexts;
+    int[] stackpieces;
+    int[] stackmoves;
+    int[] stackpos;
+    int exitx, exity;
+    int colorexit;
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    piece[] lpiece;
+    public int[] lposx;
+    public int[] lposy;
+    int[][] stacklposx;
+    int[][] stacklposy;
+    zonep[] stackzonee;
+    zonep[] stackzoneea;
+    zonep[] stackzonel;
+    zonep[] stackzonela;
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    public int[] saved_lposx;
+    public int[] saved_lposy;
+    int[][] saved_stacklposx;
+    int[][] saved_stacklposy;
+    int saved_poistack_state;
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    public int MAXDEPTH = 0;
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    public int countmoves;
+    public bool solved = false;
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    void save_sol()
+    {
+        saved_poistack_state = poistack_state;
+        for (int i = 0; i < poistack_state; i++)
+        {
+            copy_vec(saved_stacklposx[i], stacklposx[i]);
+            copy_vec(saved_stacklposy[i], stacklposy[i]);
+        }
+    }
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
     static void getenterzonea(piece piec, int sx, int sy, int move, out zonep zone)
     {
         direction dire = piec.dire;
@@ -446,7 +435,6 @@ class unblmedata
         }
         throw new Exception("getleavezonea");
     }
-
     static void getleavezone(piece piec, int sx, int sy, int move, out zonep zone)
     {
         direction dire = piec.dire;
@@ -487,55 +475,6 @@ class unblmedata
         }
         throw new Exception("getleavezone");
     }
-
-    public static void testoverlaps()
-    {
-        direction dire = direction.horiz;
-        piece pies = new piece(dire, 3);
-        int posx = 0;
-        int posy = 2;
-        zonep zone;
-        getleavezone(pies, posx, posy, -4, out zone);
-        Console.WriteLine(zone);
-    }
-
-    int lenx;
-    int leny;
-    int[][] data;
-    int lennexts;
-    int[] nexts;
-    int[] types;
-    int lenstack;
-    int poistack_state;
-    int poistack_nexts;
-    int poistack_moves;
-
-    int[][] stacknexts;
-    int[] stackpieces;
-    int[] stackmoves;
-    int[] stackpos;
-    int exitx, exity;
-    int colorexit;
-    ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////
-    piece[] lpiece;
-    public int[] lposx;
-    public int[] lposy;
-    int[][] stacklposx;
-    int[][] stacklposy;
-    zonep[] stackzonee;
-    zonep[] stackzoneea;
-    zonep[] stackzonel;
-    zonep[] stackzonela;
-    ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////
-    public int MAXDEPTH = 0;
-    ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////
-    public DateTime startime;
-    public int countmoves;
-    ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////
     int maxdata()
     {
         int i, j;
@@ -581,6 +520,7 @@ class unblmedata
         lpiece = new piece[lennexts];
         lposx = new int[lennexts];
         lposy = new int[lennexts];
+
         stacklposx = new int[lenstack][];
         stacklposy = new int[lenstack][];
         for (i = 0; i < lenstack; i++)
@@ -588,22 +528,18 @@ class unblmedata
             stacklposx[i] = new int[lennexts];
             stacklposy[i] = new int[lennexts];
         }
-    }
 
-    public void simu_load()
-    {
-        lenx = 6;
-        leny = 6;
-        lenstack = 300;
-        alloc_mats();
-        //simu_data();
-        alloc_nexts();
-        alloc_lists();
-        calctypes();
-        printtypes();
+        saved_lposx = new int[lennexts];
+        saved_lposy = new int[lennexts];
+
+        saved_stacklposx = new int[lenstack][];
+        saved_stacklposy = new int[lenstack][];
+        for (i = 0; i < lenstack; i++)
+        {
+            saved_stacklposx[i] = new int[lennexts];
+            saved_stacklposy[i] = new int[lennexts];
+        }
     }
-    ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////
 
     void move_ind(int ind, int d)
     {
@@ -780,12 +716,12 @@ class unblmedata
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
 
-    void repkeys()
+    public void repkeys()
     {
         ConsoleKeyInfo keyinfo;
         ConsoleKey key;
         int pos = 0;
-        Console.WriteLine("Solution found press any key to view, or Esc to quit");
+        Console.WriteLine("Solution FOUND in {0} moves!!! Press any key to view, or Esc to quit", saved_poistack_state - 1);
         keyinfo = Console.ReadKey(true);
         if (keyinfo.Key == ConsoleKey.Escape) return;
         while (true)
@@ -799,7 +735,7 @@ class unblmedata
             }
             Console.WriteLine("Move no {0}", pos);
             Console.WriteLine();
-            print_data(stacklposx[pos], stacklposy[pos]);
+            print_data(saved_stacklposx[pos], saved_stacklposy[pos]);
             Console.WriteLine();
             Console.WriteLine("press Esc to quit, Home/UP/DOWN arrows to navigate solution");
             keyinfo = Console.ReadKey(true);
@@ -808,7 +744,7 @@ class unblmedata
             {
                 case ConsoleKey.Home: pos = 0; break;
                 case ConsoleKey.UpArrow: pos--; if (pos < 0) pos = 0; break;
-                case ConsoleKey.DownArrow: pos++; if (pos >= poistack_state) pos = poistack_state - 1; break;
+                case ConsoleKey.DownArrow: pos++; if (pos >= saved_poistack_state) pos = saved_poistack_state - 1; break;
                 case ConsoleKey.Escape: return;
             }
 
@@ -830,16 +766,14 @@ class unblmedata
         for (i = 0; i < poistack_state; i++)
         {
             //Console.WriteLine("{0} :", poistack_state);
-            Console.WriteLine("data no {0} :", i);
-            print_data(stacklposx[i], stacklposy[i]);
-            Console.WriteLine(@"test_case_step({0},{1});\\{2}", stackpieces[i], stackmoves[i], (char)('A' + stackpieces[i]));
+            //Console.WriteLine("data no {0} :", i);
+            //print_data(stacklposx[i], stacklposy[i]);
+            //Console.WriteLine(@"test_case_step({0},{1});\\{2}", stackpieces[i], stackmoves[i], (char)('A' + stackpieces[i]));
             //Console.WriteLine();
         }
 
         Console.WriteLine("{0} moves.", poistack_moves);
-        DateTime endetime = DateTime.Now;
-        TimeSpan difftime = endetime - startime;
-        Console.WriteLine("Run Time {0}", difftime);
+        Console.WriteLine("{0} stack.", poitracehash);
         Console.WriteLine("recursion called {0} times", countmoves);
     }
 
@@ -878,6 +812,29 @@ class unblmedata
         getleavezonea(piece, posx, posy, diff, out zonela);
     }
 
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    public void reset()
+    {
+        solved = false;
+        poistack_moves = 0;
+        poistack_nexts = 0;
+        poistack_state = 0;
+        restore_init_pos();//for safety and readability ...
+
+        poitracehash = 0;
+    }
+
+    public void save_init_pos()
+    {
+        copy_vec(saved_lposx, lposx);
+        copy_vec(saved_lposy, lposy);
+    }
+    public void restore_init_pos()
+    {
+        copy_vec(lposx, saved_lposx);
+        copy_vec(lposy, saved_lposy);
+    }
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
     void push_nexts()
@@ -982,17 +939,18 @@ class unblmedata
     ////////////////////////////////////////////////////
     bool was_good_move()
     {
-        if (moving_cycles()) return false;
         if (is_nordered()) return false;
-        trace.makehash(poistack_moves, lennexts, lposx, lposy);
-        if (trace.pos_hash_in_trace()) return false;
-        trace.push_hash();
+        if (moving_cycles()) return false;
+        unsafe
+        {
+            fixed (byte* pbtracehash = arrbytestracehash, pbarrhash = arrbyteshash)
+                if (was_already_hash_and_push(pbtracehash, pbarrhash)) return false;
+        }
         return true;
     }
 
     bool data_exists_before()
     {
-        //return false;
         int i;
         for (i = 0; i < poistack_state; i++)
         {
@@ -1057,9 +1015,8 @@ class unblmedata
     public void exec_move(int i, int j)
     {
         move_ind(i, j);
-        if (!data_exists_before())
-            if (was_good_move())
-                recursion();
+        if (was_good_move())
+            recursion();
     }
 
     public void stack_make_nexts_and_make_moves()
@@ -1081,14 +1038,13 @@ class unblmedata
 
     public void recursion()
     {
+        if (solved) return;
         countmoves++;
-        if ((countmoves % 1000000) == 0) Console.Write("+");
         if (is_final())
         {
             push_state();
-            print_stack();
-            repkeys();
-            Environment.Exit(0);
+            solved = true;
+            save_sol();
         }
         if (MAXDEPTH != 0)
             if (poistack_state == MAXDEPTH)
@@ -1186,36 +1142,6 @@ class unblmedata
         ret.exity = arrbytes[2 + ret.lenx * ret.leny + 2] - '0';
         return ret;
     }
-
-    void copy_vec_bytes(byte[] dest, byte[] src)
-    {
-        int i;
-        int len = 2 * lennexts + 1;
-        for (i = 0; i < len; i++)
-            dest[i] = src[i];
-    }
-
-    bool equal_vec_bytes(byte[] dest, byte[] src)
-    {
-        int i;
-        int len = 2 * lennexts + 1;
-        for (i = 0; i < len; i++)
-            if (dest[i] != src[i]) return false;
-        return true;
-    }
-
-
-    void print_bytes(byte[] arrbytes)
-    {
-        int len;
-        int i;
-        len = arrbytes.Length;
-        for (i = 0; i < len; i++)
-        {
-            Console.Write("{0} ", arrbytes[i]);
-        }
-        Console.WriteLine();
-    }
 }
 
 
@@ -1224,7 +1150,6 @@ class unblme
     static void Main(String[] arrstr)
     {
         String namefile = null;
-        String strmaxrec = "50";
         int i;
         int len;
         String arg;
@@ -1238,26 +1163,42 @@ class unblme
             arg = arg.Substring(2);
             if (optarg == "-i")
             { namefile = arg; continue; }
-            if (optarg == "-d")
-            { strmaxrec = arg; continue; }
         }
         unblmedata vunblmedata = unblmedata.GetUnblMeData(namefile);
-        vunblmedata.MAXDEPTH = Int32.Parse(strmaxrec);
 
-        Console.WriteLine("MAXDEPTH={0}", vunblmedata.MAXDEPTH);
+        //Console.WriteLine("initial");
+        //vunblmedata.print_data(vunblmedata.lposx, vunblmedata.lposy);
+        vunblmedata.save_init_pos();
 
-        Console.WriteLine("initial");
-        vunblmedata.print_data(vunblmedata.lposx, vunblmedata.lposy);
-        Console.WriteLine("starting computing...");
-        vunblmedata.startime = DateTime.Now;
-        vunblmedata.countmoves = 0;
-        vunblmedata.recursion();
+        DateTime startime = DateTime.Now;
+        int istart = 1;
+        for (i = istart; i < 200; i++)
+        {
+            Console.WriteLine("Computing for {0}...", i);
+            vunblmedata.MAXDEPTH = i;
+            vunblmedata.countmoves = 0;
+            vunblmedata.reset();
+            vunblmedata.recursion();
+            //Console.WriteLine("stack {0} size.", vunblmedata.poitracehash);
+            if (vunblmedata.solved)
+                break;
+        }
+        if (i == 200)
+        {
+            Console.WriteLine("Given up.", vunblmedata.poitracehash);
+            Console.ReadKey();
+            return;
+        }
+        DateTime endetime = DateTime.Now;
+        TimeSpan difftime = endetime - startime;
+        Console.WriteLine("Run Time {0}", difftime);
+        vunblmedata.repkeys();
 
-        Console.WriteLine("No sol. found. press a key...");
         Console.WriteLine("{0} moves.", vunblmedata.countmoves);
-        //Console.WriteLine("is_indep called {0} times.", vunblmedata.countindeps);
+        Console.WriteLine("{0} stack.", vunblmedata.poitracehash);
         Console.ReadKey();
     }
 }
-//  A  B  C  D  E  F  G  H  I  J  K  L
-//  0  1  2  3  4  5  6  7  8  9 10 11
+//  A  B  C  D  E  F  G  H  I  J  K  L  M  N
+//  0  1  2  3  4  5  6  7  8  9 10 11 12 13
+
