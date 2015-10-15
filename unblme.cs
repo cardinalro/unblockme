@@ -754,10 +754,11 @@ class unblmedata
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
 
-    void print_footprint(int val, direction type, int pos)
+    public void print_usage()
     {
-        Console.WriteLine();
-        Console.WriteLine("{0}({1}): {2}", val, type, pos);
+        //Console.WriteLine("{0} stack moves.", poistack_moves);
+        Console.WriteLine("recursion called {0} times", countmoves);
+        Console.WriteLine("[{0}] mem stack.", poitracehash);
     }
 
     void print_stack()
@@ -771,10 +772,7 @@ class unblmedata
             //Console.WriteLine(@"test_case_step({0},{1});\\{2}", stackpieces[i], stackmoves[i], (char)('A' + stackpieces[i]));
             //Console.WriteLine();
         }
-
-        Console.WriteLine("{0} moves.", poistack_moves);
-        Console.WriteLine("{0} stack.", poitracehash);
-        Console.WriteLine("recursion called {0} times", countmoves);
+        print_usage();
     }
 
     ////////////////////////////////////////////////////
@@ -909,9 +907,15 @@ class unblmedata
     bool is_nordered()
     {
         if (poistack_moves < 2) return false;
-        if (is_indep(poistack_moves - 1, poistack_moves - 2))
-            return stackpieces[poistack_moves - 1] < stackpieces[poistack_moves - 2];
-        return false;
+        if (!is_indep(poistack_moves - 1, poistack_moves - 2)) return false;
+        if (poistack_moves > 2)
+        {
+            if (is_indep(poistack_moves - 2, poistack_moves - 3) && !is_indep(poistack_moves - 1, poistack_moves - 3))
+                return false;
+            if (is_indep(poistack_moves - 1, poistack_moves - 3) && !is_indep(poistack_moves - 2, poistack_moves - 3))
+                return true;
+        }
+        return stackpieces[poistack_moves - 1] < stackpieces[poistack_moves - 2];
     }
 
     bool moving_cycles()
@@ -941,6 +945,7 @@ class unblmedata
     {
         if (is_nordered()) return false;
         if (moving_cycles()) return false;
+        //if (data_exists_before()) return false;
         unsafe
         {
             fixed (byte* pbtracehash = arrbytestracehash, pbarrhash = arrbyteshash)
@@ -1171,6 +1176,7 @@ class unblme
         vunblmedata.save_init_pos();
 
         DateTime startime = DateTime.Now;
+        TimeSpan difftime;
         int istart = 1;
         for (i = istart; i < 200; i++)
         {
@@ -1178,8 +1184,12 @@ class unblme
             vunblmedata.MAXDEPTH = i;
             vunblmedata.countmoves = 0;
             vunblmedata.reset();
+            DateTime startimec = DateTime.Now;
             vunblmedata.recursion();
-            //Console.WriteLine("stack {0} size.", vunblmedata.poitracehash);
+            vunblmedata.print_usage();
+            DateTime endetimec = DateTime.Now;
+            difftime = endetimec - startimec;
+            Console.WriteLine("Run Time step {0} {1}", i, difftime);
             if (vunblmedata.solved)
                 break;
         }
@@ -1190,12 +1200,11 @@ class unblme
             return;
         }
         DateTime endetime = DateTime.Now;
-        TimeSpan difftime = endetime - startime;
-        Console.WriteLine("Run Time {0}", difftime);
+        difftime = endetime - startime;
+        Console.WriteLine("Total Run Time {0}", difftime);
         vunblmedata.repkeys();
 
-        Console.WriteLine("{0} moves.", vunblmedata.countmoves);
-        Console.WriteLine("{0} stack.", vunblmedata.poitracehash);
+        vunblmedata.print_usage();
         Console.ReadKey();
     }
 }
