@@ -887,6 +887,7 @@ class unblmedata
 
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
+
     int first_val(int val)
     {
         int i;
@@ -945,7 +946,7 @@ class unblmedata
     {
         if (is_nordered()) return false;
         if (moving_cycles()) return false;
-        //if (data_exists_before()) return false;
+        if (data_exists_before()) return false;
         unsafe
         {
             fixed (byte* pbtracehash = arrbytestracehash, pbarrhash = arrbyteshash)
