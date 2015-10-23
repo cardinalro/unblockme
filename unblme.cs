@@ -887,6 +887,16 @@ class unblmedata
 
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
+    bool is_nordered1()
+    {
+        if (poistack_moves < 2) return false;
+        if (is_indep(poistack_moves - 1, poistack_moves - 2))
+            return stackpieces[poistack_moves - 1] < stackpieces[poistack_moves - 2];
+        return false;
+    }
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
 
     int first_val(int val)
     {
@@ -909,11 +919,11 @@ class unblmedata
     {
         if (poistack_moves < 2) return false;
         if (!is_indep(poistack_moves - 1, poistack_moves - 2)) return false;
-        if (poistack_moves > 2)
+        for (int k = 3; poistack_moves - k >= 0; k++)
         {
-            if (is_indep(poistack_moves - 2, poistack_moves - 3) && !is_indep(poistack_moves - 1, poistack_moves - 3))
+            if (is_indep(poistack_moves - 2, poistack_moves - k) && !is_indep(poistack_moves - 1, poistack_moves - k))
                 return false;
-            if (is_indep(poistack_moves - 1, poistack_moves - 3) && !is_indep(poistack_moves - 2, poistack_moves - 3))
+            if (is_indep(poistack_moves - 1, poistack_moves - k) && !is_indep(poistack_moves - 2, poistack_moves - k))
                 return true;
         }
         return stackpieces[poistack_moves - 1] < stackpieces[poistack_moves - 2];
